@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { Bar, Pie, Line } from "react-chartjs-2";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
@@ -36,9 +37,16 @@ const DUR_LABELS: Record<string, string> = {
 };
 
 function Causas() {
-  const causas = Object.entries(data.causa).sort((a, b) => b[1] - a[1]);
-  const top5 = causas.slice(0, 5);
-  const otros = causas.slice(5).reduce((s, [, v]) => s + v, 0);
+  const [topN, setTopN] = useState(5);
+  const [excluirSinInfo, setExcluirSinInfo] = useState(true);
+
+  const causas = useMemo(() => {
+    const entries = Object.entries(data.causa).sort((a, b) => b[1] - a[1]);
+    return excluirSinInfo ? entries.filter(([k]) => k !== "Sin Información") : entries;
+  }, [excluirSinInfo]);
+
+  const top = causas.slice(0, topN);
+  const otros = causas.slice(topN).reduce((s, [, v]) => s + v, 0);
 
   const durVals = DUR_ORDER.map((k) => (data.duracion as Record<string, number>)[k] ?? 0);
 
@@ -51,17 +59,44 @@ function Causas() {
         </p>
       </header>
 
+      <div className="flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>Top causas:</span>
+          <input
+            type="range"
+            min={2}
+            max={Math.min(10, causas.length)}
+            value={topN}
+            onChange={(e) => setTopN(Number(e.target.value))}
+            className="accent-primary"
+          />
+          <span className="font-medium text-foreground w-6 text-center">{topN}</span>
+        </label>
+        <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={excluirSinInfo}
+            onChange={(e) => setExcluirSinInfo(e.target.checked)}
+            className="accent-primary"
+          />
+          Excluir “Sin información”
+        </label>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Motivos legales del divorcio" description="Ranking completo de las causales invocadas." height={420}>
+        <ChartCard title="Motivos legales del divorcio" description="Ranking completo de las causales invocadas." height={440}>
           <Bar
+            key={`causas-${excluirSinInfo}`}
             data={{
               labels: causas.map(([k]) => CAUSA_CORTA[k] ?? k),
-              datasets: [{
-                label: "Casos",
-                data: causas.map(([, v]) => v),
-                backgroundColor: palette[4],
-                borderRadius: 6,
-              }],
+              datasets: [
+                {
+                  label: "Casos",
+                  data: causas.map(([, v]) => v),
+                  backgroundColor: palette[4],
+                  borderRadius: 6,
+                },
+              ],
             }}
             options={{
               indexAxis: "y",
@@ -72,15 +107,18 @@ function Causas() {
           />
         </ChartCard>
 
-        <ChartCard title="Peso de las 5 causas principales" description="Concentración de motivos en los principales grupos." height={420}>
+        <ChartCard title={`Peso de las ${topN} causas principales`} description="Concentración de motivos en los principales grupos." height={440}>
           <Pie
+            key={`pie-${topN}-${excluirSinInfo}`}
             data={{
-              labels: [...top5.map(([k]) => CAUSA_CORTA[k] ?? k), "Otras causas"],
-              datasets: [{
-                data: [...top5.map(([, v]) => v), otros],
-                backgroundColor: palette.slice(0, 6),
-                borderWidth: 0,
-              }],
+              labels: [...top.map(([k]) => CAUSA_CORTA[k] ?? k), "Otras causas"],
+              datasets: [
+                {
+                  data: [...top.map(([, v]) => v), otros],
+                  backgroundColor: palette.slice(0, top.length + 1),
+                  borderWidth: 0,
+                },
+              ],
             }}
             options={{ responsive: true, maintainAspectRatio: false }}
           />
@@ -91,16 +129,18 @@ function Causas() {
         <Line
           data={{
             labels: DUR_ORDER.map((k) => DUR_LABELS[k]),
-            datasets: [{
-              label: "Divorcios",
-              data: durVals,
-              borderColor: palette[0],
-              backgroundColor: palette[0] + "33",
-              fill: true,
-              tension: 0.35,
-              pointRadius: 5,
-              pointBackgroundColor: palette[0],
-            }],
+            datasets: [
+              {
+                label: "Divorcios",
+                data: durVals,
+                borderColor: palette[0],
+                backgroundColor: palette[0] + "33",
+                fill: true,
+                tension: 0.35,
+                pointRadius: 5,
+                pointBackgroundColor: palette[0],
+              },
+            ],
           }}
           options={{
             responsive: true,
