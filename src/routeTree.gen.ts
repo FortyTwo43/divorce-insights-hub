@@ -9,8 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as GeografiaRouteImport } from './routes/geografia'
+import { Route as DemografiaRouteImport } from './routes/demografia'
+import { Route as CausasRouteImport } from './routes/causas'
 import { Route as IndexRouteImport } from './routes/index'
 
+const GeografiaRoute = GeografiaRouteImport.update({
+  id: '/geografia',
+  path: '/geografia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemografiaRoute = DemografiaRouteImport.update({
+  id: '/demografia',
+  path: '/demografia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CausasRoute = CausasRouteImport.update({
+  id: '/causas',
+  path: '/causas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +37,61 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/causas': typeof CausasRoute
+  '/demografia': typeof DemografiaRoute
+  '/geografia': typeof GeografiaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/causas': typeof CausasRoute
+  '/demografia': typeof DemografiaRoute
+  '/geografia': typeof GeografiaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/causas': typeof CausasRoute
+  '/demografia': typeof DemografiaRoute
+  '/geografia': typeof GeografiaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/causas' | '/demografia' | '/geografia'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/causas' | '/demografia' | '/geografia'
+  id: '__root__' | '/' | '/causas' | '/demografia' | '/geografia'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CausasRoute: typeof CausasRoute
+  DemografiaRoute: typeof DemografiaRoute
+  GeografiaRoute: typeof GeografiaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/geografia': {
+      id: '/geografia'
+      path: '/geografia'
+      fullPath: '/geografia'
+      preLoaderRoute: typeof GeografiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demografia': {
+      id: '/demografia'
+      path: '/demografia'
+      fullPath: '/demografia'
+      preLoaderRoute: typeof DemografiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/causas': {
+      id: '/causas'
+      path: '/causas'
+      fullPath: '/causas'
+      preLoaderRoute: typeof CausasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CausasRoute: CausasRoute,
+  DemografiaRoute: DemografiaRoute,
+  GeografiaRoute: GeografiaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
