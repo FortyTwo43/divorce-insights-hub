@@ -1,0 +1,137 @@
+{
+  "total": 14568,
+  "provincia": {
+    "Guayas": 3987,
+    "Pichincha": 1953,
+    "Azuay": 1312,
+    "Manabí": 1008,
+    "El Oro": 873,
+    "Imbabura": 686,
+    "Loja": 680,
+    "Chimborazo": 638,
+    "Cañar": 497,
+    "Tungurahua": 482,
+    "Cotopaxi": 393,
+    "Los Ríos": 322,
+    "Esmeraldas": 269,
+    "Santa Elena": 212,
+    "Santo Domingo de los Tsáchilas": 186,
+    "Carchi": 181,
+    "Morona Santiago": 177,
+    "Bolívar": 171,
+    "Pastaza": 134,
+    "Orellana": 121,
+    "Zamora Chinchipe": 104,
+    "Galápagos": 80,
+    "Napo": 77,
+    "Sucumbíos": 25
+  },
+  "mes": {
+    "Enero": 2465,
+    "Febrero": 1710,
+    "Marzo": 995,
+    "Abril": 1,
+    "Mayo": 18,
+    "Junio": 491,
+    "Julio": 1406,
+    "Agosto": 1383,
+    "Septiembre": 1723,
+    "Octubre": 1402,
+    "Noviembre": 1429,
+    "Diciembre": 1545
+  },
+  "causa": {
+    "Por mutuo consentimiento vía judicial": 5349,
+    "Por mutuo consentimiento vía notarial": 5021,
+    "El abandono injustificado de cualquiera de los cónyuges por más de seis meses ininterrumpidos": 3271,
+    "Sin Información": 412,
+    "El estado habitual de falta de armonía de las dos voluntades en la vida matrimonial": 352,
+    "Los tratos crueles o violencia contra la mujer o miembros del núcleo familiar": 62,
+    "Las Amenazas graves de un cónyuge contra la vida del otro": 28,
+    "La condena ejecutoriada a pena privativa de la libertad mayor a diez años": 10,
+    "El adulterio de uno de los cónyuges": 43,
+    "La tentativa de uno de los cónyuges contra la vida del otro": 4,
+    "Los actos ejecutados por uno de los cónyuges con el fin de involucrar al otro o a los hijos en actividades ilícitas": 3,
+    "El que uno de los cónyuges sea ebrio consuetudinario o toxicómano": 13
+  },
+  "nivel_h": {
+    "Primaria": 1659,
+    "Secundaria": 2265,
+    "Educación media / Bachillerato": 5572,
+    "Superior no Universitario": 765,
+    "Educación básica": 1344,
+    "Sin información": 495,
+    "Superior Universitario": 2265,
+    "Posgrado": 156,
+    "Ninguno": 23,
+    "Centro de alfabetización": 14,
+    "Jardín de Infantes": 10
+  },
+  "nivel_m": {
+    "Primaria": 1466,
+    "Educación básica": 1224,
+    "Superior no Universitario": 847,
+    "Sin información": 568,
+    "Educación media / Bachillerato": 5526,
+    "Superior Universitario": 2564,
+    "Secundaria": 2178,
+    "Posgrado": 145,
+    "Ninguno": 28,
+    "Centro de alfabetización": 13,
+    "Jardín de Infantes": 9
+  },
+  "etnia": {
+    "Indigena": 366,
+    "Mestiza": 13339,
+    "Montubia": 196,
+    "Sin Información": 276,
+    "Blanca": 172,
+    "Mulata": 55,
+    "Otro": 90,
+    "Negra": 25,
+    "Afroecuatoriana /afrodescendiente": 49
+  },
+  "area": {
+    "Rural": 1636,
+    "Urbana": 12932
+  },
+  "duracion": {
+    "21-30": 2749,
+    "30+": 1330,
+    "11-20": 4417,
+    "6-10": 3061,
+    "1-5": 2833,
+    "<1": 178
+  },
+  "edad_h": {
+    "35-44": 4802,
+    "65+": 672,
+    "55-64": 1725,
+    "45-54": 3491,
+    "25-34": 3616,
+    "<25": 262
+  },
+  "edad_m": {
+    "35-44": 4813,
+    "65+": 366,
+    "55-64": 1207,
+    "45-54": 3032,
+    "25-34": 4521,
+    "<25": 629
+  },
+  "hijos": {
+    "0": 13333,
+    "99": 329,
+    "2": 267,
+    "1": 540,
+    "3": 76,
+    "4": 16,
+    "5": 6,
+    "6": 1
+  },
+  "capitulaciones": {
+    "No": 13048,
+    "Sin Información": 1192,
+    "Si": 328
+  }
+}
