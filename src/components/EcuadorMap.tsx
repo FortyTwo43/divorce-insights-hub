@@ -49,21 +49,22 @@ export function EcuadorMap({
   const legendStops = [0, 0.25, 0.5, 0.75, 1];
 
   return (
-    <div className="relative">
-      <div className="flex items-start justify-between mb-2">
+    <div className="relative flex flex-col h-full">
+      <div className="flex items-start justify-between mb-2 shrink-0 min-h-[32px]">
         <p className="text-sm text-muted-foreground">{title}</p>
         {hover && (
-          <div className="text-sm font-medium text-foreground bg-secondary/60 px-3 py-1 rounded-md">
+          <div className="text-sm font-medium text-foreground bg-secondary/60 px-3 py-1 rounded-md z-10 absolute right-0 top-0">
             {hover.name}: <span className="text-primary">{hover.value.toLocaleString()}</span>
           </div>
         )}
       </div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        className="w-full h-auto"
-        role="img"
-        aria-label="Mapa coroplético del Ecuador"
-      >
+      <div className="flex-1 min-h-0 w-full">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-full"
+          role="img"
+          aria-label="Mapa coroplético del Ecuador"
+        >
         {fc.features.map((f, i) => {
           const name = normalize(f.properties.name);
           const value = data[name] ?? 0;
@@ -84,9 +85,10 @@ export function EcuadorMap({
             </path>
           );
         })}
-      </svg>
+        </svg>
+      </div>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex items-center gap-3 shrink-0">
         <span className="text-xs text-muted-foreground">Menos</span>
         <div className="flex-1 h-2 rounded-full overflow-hidden flex">
           {legendStops.map((t, i) => (
