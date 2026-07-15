@@ -42,11 +42,32 @@ ChartJS.defaults.plugins.tooltip.displayColors = true;
 ChartJS.defaults.plugins.tooltip.callbacks.label = (context) => {
   let label = context.dataset.label || '';
   if (label) label += ': ';
-  if (context.parsed.y !== null && context.parsed.y !== undefined) {
-    label += new Intl.NumberFormat('es-EC').format(context.parsed.y);
-  } else if (context.parsed !== null) {
-    label += new Intl.NumberFormat('es-EC').format(context.parsed as unknown as number);
+
+  let value: number | null = null;
+
+  const parsed = context.parsed as unknown;
+
+  if (typeof parsed === 'number') {
+    // Arc charts (Pie, Doughnut, PolarArea)
+    value = parsed;
+  } else if (parsed !== null && typeof parsed === 'object') {
+    const p = parsed as Record<string, number>;
+    if (typeof p.r === 'number') {
+      // Radar / PolarArea scaled
+      value = p.r;
+    } else if (context.chart.config.options && 'indexAxis' in (context.chart.config.options as Record<string, unknown>) && (context.chart.config.options as Record<string, unknown>).indexAxis === 'y') {
+      // Horizontal bar chart
+      value = typeof p.x === 'number' ? p.x : null;
+    } else if (typeof p.y === 'number') {
+      // Vertical bar / line
+      value = p.y;
+    }
   }
+
+  if (value !== null && !isNaN(value)) {
+    label += new Intl.NumberFormat('es-EC').format(value);
+  }
+
   return label;
 };
 
