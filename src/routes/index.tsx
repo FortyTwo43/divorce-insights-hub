@@ -37,10 +37,11 @@ function Resumen() {
   }
 
   const mesData = MESES.map((m) => filteredData.mes[m] ?? 0);
+  const topProvObj = selectedProvince ? filteredData.canton : filteredData.provincia;
+  const topProv = Object.entries(topProvObj).sort((a,b) => b[1] - a[1]).slice(0, 8);
   const areaLabels = Object.keys(filteredData.area);
   const areaVals = Object.values(filteredData.area);
 
-  const topProv = Object.entries(filteredData.provincia).sort((a,b) => b[1] - a[1]).slice(0, 8);
   const urbanoPct = filteredData.total > 0 ? ((filteredData.area.Urbana / filteredData.total) * 100).toFixed(1) : "0";
 
   return (
@@ -92,7 +93,11 @@ function Resumen() {
           />
         </ChartCard>
 
-        <ChartCard title="Top provincias con más divorcios" description="Las 8 provincias con mayor número de divorcios registrados." height={380}>
+        <ChartCard 
+          title={selectedProvince ? `Top cantones en ${selectedProvince}` : "Top provincias con más divorcios"} 
+          description={selectedProvince ? "Los cantones con mayor número de divorcios." : "Las 8 provincias con mayor número de divorcios registrados."} 
+          height={380}
+        >
           <Bar
             data={{
               labels: topProv.map(([k]) => k),

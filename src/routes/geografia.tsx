@@ -37,10 +37,21 @@ function Geografia() {
 
   const filtered = useMemo(() => {
     if (!filteredData) return [];
-    const entries = Object.entries(filteredData.provincia) as [string, number][];
-    const list = region === "todas" ? entries : entries.filter(([k]) => REGIONES[region].includes(k));
-    return [...list].sort((a, b) => (orden === "desc" ? b[1] - a[1] : a[1] - b[1]));
-  }, [filteredData, region, orden]);
+    let entries: [string, number][] = [];
+    
+    if (selectedProvince) {
+      // Si hay una provincia seleccionada, mostramos cantones
+      entries = Object.entries(filteredData.canton);
+    } else {
+      // Si no, mostramos provincias y aplicamos filtro de región
+      entries = Object.entries(filteredData.provincia);
+      if (region !== "todas") {
+        entries = entries.filter(([k]) => REGIONES[region].includes(k));
+      }
+    }
+    
+    return entries.sort((a, b) => (orden === "desc" ? b[1] - a[1] : a[1] - b[1]));
+  }, [filteredData, region, orden, selectedProvince]);
 
   const mapData = useMemo(() => {
     if (!filteredData) return {};
@@ -69,22 +80,26 @@ function Geografia() {
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm text-muted-foreground">Región:</span>
-        <div className="inline-flex rounded-md border border-border bg-secondary/40 p-0.5">
-          {REGION_OPTS.map((o) => (
-            <button
-              key={o.value}
-              onClick={() => setRegion(o.value)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                region === o.value
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
+        {!selectedProvince && (
+          <>
+            <span className="text-sm text-muted-foreground">Región:</span>
+            <div className="inline-flex rounded-md border border-border bg-secondary/40 p-0.5">
+              {REGION_OPTS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => setRegion(o.value)}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                    region === o.value
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <span className="text-sm text-muted-foreground ml-2">Orden:</span>
         <div className="inline-flex rounded-md border border-border bg-secondary/40 p-0.5">
           {(["desc", "asc"] as const).map((o) => (
@@ -112,8 +127,8 @@ function Geografia() {
       </ChartCard>
 
       <ChartCard
-        title="Divorcios por provincia"
-        description={`Ranking de ${filtered.length} provincia${filtered.length === 1 ? "" : "s"} según el filtro.`}
+        title={selectedProvince ? `Divorcios por cantón (${selectedProvince})` : "Divorcios por provincia"}
+        description={`Ranking de ${filtered.length} ${selectedProvince ? "cantones" : "provincias"}${selectedProvince ? "" : " según el filtro."}`}
         height={Math.max(320, filtered.length * 26 + 60)}
       >
         <Bar
@@ -140,7 +155,7 @@ function Geografia() {
       </ChartCard>
 
       <ChartCard
-        title="Provincias con mayor concentración"
+        title={selectedProvince ? "Cantones con mayor concentración" : "Provincias con mayor concentración"}
         description={`Top ${top10.length} en volumen absoluto.`}
         height={400}
       >

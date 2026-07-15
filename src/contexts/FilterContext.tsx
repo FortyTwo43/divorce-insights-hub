@@ -7,6 +7,7 @@ type DivorceRecord = Record<string, string>;
 export interface AggregatedData {
   total: number;
   provincia: Record<string, number>;
+  canton: Record<string, number>;
   mes: Record<string, number>;
   causa: Record<string, number>;
   nivel_h: Record<string, number>;
@@ -79,6 +80,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     const agg: AggregatedData = {
       total: list.length,
       provincia: {},
+      canton: {},
       mes: {},
       causa: {},
       nivel_h: {},
@@ -99,6 +101,7 @@ export function FilterProvider({ children }: { children: ReactNode }) {
 
     for (const row of list) {
       inc(agg.provincia, row.provincia_inscripcion);
+      inc(agg.canton, row.canton_inscripcion);
       inc(agg.mes, row.mes_inscripcion);
       inc(agg.causa, row.causa_divorcio);
       inc(agg.nivel_h, row.nivel_instruccion_conyuge1);
