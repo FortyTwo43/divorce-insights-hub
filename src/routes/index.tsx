@@ -30,7 +30,7 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
 }
 
 function Resumen() {
-  const { filteredData, isLoading, selectedProvince } = useFilters();
+  const { filteredData, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton, selectedMonth, setSelectedMonth } = useFilters();
 
   if (isLoading || !filteredData) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
@@ -52,7 +52,9 @@ function Resumen() {
           {selectedProvince ? `Divorcios en ${selectedProvince} (2020)` : "Divorcios registrados en 2020"}
         </h1>
         <p className="mt-3 text-muted-foreground max-w-2xl">
-          Exploración interactiva de {filteredData.total.toLocaleString("es-EC")} divorcios inscritos {selectedProvince ? `en la provincia de ${selectedProvince}` : "en Ecuador"} durante 2020. 
+          Exploración interactiva de {filteredData.total.toLocaleString("es-EC")} divorcios inscritos
+          {selectedProvince ? ` en la provincia de ${selectedProvince}` : " en Ecuador"}
+          {selectedMonth ? ` durante ${selectedMonth} de 2020` : " durante 2020"}.
         </p>
       </section>
 
@@ -64,18 +66,41 @@ function Resumen() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Ritmo mensual de inscripciones" description="Cuándo se registraron los divorcios durante 2020.">
+        <ChartCard 
+          title="Ritmo mensual de inscripciones" 
+          description={selectedMonth ? `Filtrado por ${selectedMonth} · Clic para deseleccionar` : "Clic en un mes para filtrar todos los gráficos."}
+        >
           <Bar
             data={{
               labels: MESES,
               datasets: [{
                 label: "Divorcios inscritos",
                 data: mesData,
-                backgroundColor: palette[0],
+                backgroundColor: MESES.map((m) =>
+                  selectedMonth
+                    ? m === selectedMonth
+                      ? palette[0]
+                      : palette[0] + "44"
+                    : palette[0]
+                ),
                 borderRadius: 6,
               }],
             }}
-            options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedMonth = MESES[idx];
+                  setSelectedMonth(selectedMonth === clickedMonth ? null : clickedMonth);
+                }
+              },
+              scales: {
+                x: { ticks: { font: { size: 11 } } },
+              },
+            }}
           />
         </ChartCard>
 
@@ -104,7 +129,11 @@ function Resumen() {
               datasets: [{
                 label: "Divorcios",
                 data: topProv.map(([, v]) => v),
-                backgroundColor: palette[2],
+                backgroundColor: topProv.map(([k]) => 
+                  selectedProvince 
+                    ? (selectedCanton && k !== selectedCanton ? palette[2] + "44" : palette[2]) 
+                    : (selectedProvince === k ? palette[2] : palette[2])
+                ),
                 borderRadius: 6,
               }],
             }}
@@ -113,6 +142,17 @@ function Resumen() {
               responsive: true,
               maintainAspectRatio: false,
               plugins: { legend: { display: false } },
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedName = topProv[idx][0];
+                  if (selectedProvince) {
+                    setSelectedCanton(selectedCanton === clickedName ? null : clickedName);
+                  } else {
+                    setSelectedProvince(selectedProvince === clickedName ? null : clickedName);
+                  }
+                }
+              },
             }}
           />
         </ChartCard>

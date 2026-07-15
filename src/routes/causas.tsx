@@ -40,7 +40,7 @@ const DUR_LABELS: Record<string, string> = {
 function Causas() {
   const [topN, setTopN] = useState(5);
   const [excluirSinInfo, setExcluirSinInfo] = useState(true);
-  const { filteredData, isLoading, selectedProvince } = useFilters();
+  const { filteredData, isLoading, selectedProvince, selectedCause, setSelectedCause, selectedDuration, setSelectedDuration } = useFilters();
 
   const causas = useMemo(() => {
     if (!filteredData) return [];
@@ -102,7 +102,11 @@ function Causas() {
                 {
                   label: "Casos",
                   data: causas.map(([, v]) => v),
-                  backgroundColor: palette[4],
+                  backgroundColor: causas.map(([k]) => 
+                    selectedCause 
+                      ? k === selectedCause ? palette[4] : palette[4] + "44"
+                      : palette[4]
+                  ),
                   borderRadius: 6,
                 },
               ],
@@ -112,6 +116,13 @@ function Causas() {
               responsive: true,
               maintainAspectRatio: false,
               plugins: { legend: { display: false } },
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedCause = causas[idx][0];
+                  setSelectedCause(selectedCause === clickedCause ? null : clickedCause);
+                }
+              },
             }}
           />
         </ChartCard>
@@ -124,12 +135,30 @@ function Causas() {
               datasets: [
                 {
                   data: [...top.map(([, v]) => v), otros],
-                  backgroundColor: palette.slice(0, top.length + 1),
+                  backgroundColor: palette.slice(0, top.length + 1).map((col, i) => {
+                    if (!selectedCause) return col;
+                    const isOtras = i === top.length;
+                    if (isOtras) return col + "44";
+                    const causeKey = top[i][0];
+                    return causeKey === selectedCause ? col : col + "44";
+                  }),
                   borderWidth: 0,
                 },
               ],
             }}
-            options={{ responsive: true, maintainAspectRatio: false }}
+            options={{ 
+              responsive: true, 
+              maintainAspectRatio: false,
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  if (idx < top.length) {
+                    const clickedCause = top[idx][0];
+                    setSelectedCause(selectedCause === clickedCause ? null : clickedCause);
+                  }
+                }
+              },
+            }}
           />
         </ChartCard>
       </div>
@@ -140,14 +169,19 @@ function Causas() {
             labels: DUR_ORDER.map((k) => DUR_LABELS[k]),
             datasets: [
               {
-                label: "Divorcios",
+                label: "Matrimonios disueltos",
                 data: durVals,
-                borderColor: palette[0],
-                backgroundColor: palette[0] + "33",
+                borderColor: palette[1],
+                backgroundColor: palette[1] + "33",
+                borderWidth: 2,
+                pointBackgroundColor: DUR_ORDER.map(k => 
+                  selectedDuration 
+                    ? k === selectedDuration ? palette[1] : palette[1] + "44"
+                    : palette[1]
+                ),
+                pointRadius: DUR_ORDER.map(k => k === selectedDuration ? 6 : 4),
                 fill: true,
-                tension: 0.35,
-                pointRadius: 5,
-                pointBackgroundColor: palette[0],
+                tension: 0.3,
               },
             ],
           }}
@@ -156,6 +190,13 @@ function Causas() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } },
+            onClick: (_event, elements) => {
+              if (elements.length > 0) {
+                const idx = elements[0].index;
+                const clickedDur = DUR_ORDER[idx];
+                setSelectedDuration(selectedDuration === clickedDur ? null : clickedDur);
+              }
+            },
           }}
         />
       </ChartCard>

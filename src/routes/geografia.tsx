@@ -33,7 +33,7 @@ const REGION_OPTS: { value: Region; label: string }[] = [
 function Geografia() {
   const [region, setRegion] = useState<Region>("todas");
   const [orden, setOrden] = useState<"desc" | "asc">("desc");
-  const { filteredData, isLoading, selectedProvince, data: allData } = useFilters();
+  const { filteredData, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton, data: allData } = useFilters();
 
   const filtered = useMemo(() => {
     if (!filteredData) return [];
@@ -128,7 +128,7 @@ function Geografia() {
 
       <ChartCard
         title={selectedProvince ? `Divorcios por cantón (${selectedProvince})` : "Divorcios por provincia"}
-        description={`Ranking de ${filtered.length} ${selectedProvince ? "cantones" : "provincias"}${selectedProvince ? "" : " según el filtro."}`}
+        description={`Ranking de ${filtered.length} ${selectedProvince ? "cantones" : "provincias"}${selectedProvince ? "" : " según el filtro."}${!selectedProvince ? " · Clic para seleccionar" : ""}`}
         height={Math.max(320, filtered.length * 26 + 60)}
       >
         <Bar
@@ -139,7 +139,17 @@ function Geografia() {
               {
                 label: "Divorcios",
                 data: filtered.map(([, v]) => v),
-                backgroundColor: palette[0],
+                backgroundColor: filtered.map(([k]) =>
+                  selectedProvince
+                    ? selectedCanton === k
+                      ? palette[0]
+                      : selectedCanton
+                      ? palette[0] + "44"
+                      : palette[0]
+                    : selectedProvince === null && k === selectedProvince
+                    ? palette[0]
+                    : palette[0]
+                ),
                 borderRadius: 4,
               },
             ],
@@ -150,6 +160,17 @@ function Geografia() {
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: { x: { beginAtZero: true } },
+            onClick: (_event, elements) => {
+              if (elements.length > 0) {
+                const idx = elements[0].index;
+                const clickedName = filtered[idx][0];
+                if (selectedProvince) {
+                  setSelectedCanton(selectedCanton === clickedName ? null : clickedName);
+                } else {
+                  setSelectedProvince(clickedName);
+                }
+              }
+            },
           }}
         />
       </ChartCard>
@@ -160,18 +181,41 @@ function Geografia() {
         height={400}
       >
         <PolarArea
-          key={`polar-${region}`}
+          key={`polar-${region}-${selectedProvince ? "c" : "p"}`}
           data={{
             labels: top10.map(([k]) => k),
             datasets: [
               {
                 data: top10.map(([, v]) => v),
-                backgroundColor: top10.map((_, i) => palette[i % palette.length] + "cc"),
+                backgroundColor: top10.map(([k], i) => {
+                  const baseCol = palette[i % palette.length];
+                  if (selectedProvince && selectedCanton) {
+                    return k === selectedCanton ? baseCol + "cc" : baseCol + "33";
+                  }
+                  if (!selectedProvince && selectedProvince) {
+                    return k === selectedProvince ? baseCol + "cc" : baseCol + "33";
+                  }
+                  return baseCol + "cc";
+                }),
                 borderWidth: 1,
               },
             ],
           }}
-          options={{ responsive: true, maintainAspectRatio: false }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            onClick: (_event, elements) => {
+              if (elements.length > 0) {
+                const idx = elements[0].index;
+                const clickedName = top10[idx][0];
+                if (selectedProvince) {
+                  setSelectedCanton(selectedCanton === clickedName ? null : clickedName);
+                } else {
+                  setSelectedProvince(selectedProvince === clickedName ? null : clickedName);
+                }
+              }
+            },
+          }}
         />
       </ChartCard>
     </motion.div>

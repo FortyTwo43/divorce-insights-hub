@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bar, Radar, Doughnut } from "react-chartjs-2";
 import { motion } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
-import { useFilters } from "@/contexts/FilterContext";
+import { useFilters, SexFocus } from "@/contexts/FilterContext";
 
 export const Route = createFileRoute("/demografia")({
   head: () => ({ meta: [{ title: "Demografía · Divorcios Ecuador 2020" }] }),
@@ -35,7 +35,6 @@ const NIVEL_ORDER = [
   "Posgrado",
 ];
 
-type Sexo = "ambos" | "hombres" | "mujeres";
 type Escala = "lineal" | "log";
 
 function Chips<T extends string>({
@@ -67,10 +66,17 @@ function Chips<T extends string>({
 }
 
 function Demografia() {
-  const [sexo, setSexo] = useState<Sexo>("ambos");
   const [escala, setEscala] = useState<Escala>("log");
   const [incluirSinHijos, setIncluirSinHijos] = useState(true);
-  const { filteredData, isLoading, selectedProvince } = useFilters();
+  
+  const { 
+    filteredData, isLoading, selectedProvince, 
+    selectedSexFocus, setSelectedSexFocus,
+    selectedAge, setSelectedAge,
+    selectedEdu, setSelectedEdu,
+    selectedEthnicity, setSelectedEthnicity,
+    selectedChildren, setSelectedChildren
+  } = useFilters();
 
   if (isLoading || !filteredData) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
@@ -81,35 +87,48 @@ function Demografia() {
   const nivelH = NIVEL_ORDER.map((k) => filteredData.nivel_h[k] ?? 0);
   const nivelM = NIVEL_ORDER.map((k) => filteredData.nivel_m[k] ?? 0);
 
+  const isSexHombres = selectedSexFocus !== "mujeres";
+  const isSexMujeres = selectedSexFocus !== "hombres";
+
   const edadDatasets = [
-    sexo !== "mujeres" && {
+    isSexHombres && {
       label: "Hombres",
       data: edadH,
-      backgroundColor: palette[0],
+      backgroundColor: EDAD_ORDER.map(k => 
+        selectedAge ? (k === selectedAge ? palette[0] : palette[0] + "44") : palette[0]
+      ),
       borderRadius: 6,
     },
-    sexo !== "hombres" && {
+    isSexMujeres && {
       label: "Mujeres",
       data: edadM,
-      backgroundColor: palette[1],
+      backgroundColor: EDAD_ORDER.map(k => 
+        selectedAge ? (k === selectedAge ? palette[1] : palette[1] + "44") : palette[1]
+      ),
       borderRadius: 6,
     },
-  ].filter(Boolean) as { label: string; data: number[]; backgroundColor: string; borderRadius: number }[];
+  ].filter(Boolean) as { label: string; data: number[]; backgroundColor: string[]; borderRadius: number }[];
 
   const nivelDatasets = [
-    sexo !== "mujeres" && {
+    isSexHombres && {
       label: "Hombres",
       data: nivelH,
       borderColor: palette[0],
       backgroundColor: palette[0] + "40",
-      pointBackgroundColor: palette[0],
+      pointBackgroundColor: NIVEL_ORDER.map(k => 
+        selectedEdu ? (k === selectedEdu ? palette[0] : palette[0] + "44") : palette[0]
+      ),
+      pointRadius: NIVEL_ORDER.map(k => k === selectedEdu ? 6 : 4),
     },
-    sexo !== "hombres" && {
+    isSexMujeres && {
       label: "Mujeres",
       data: nivelM,
       borderColor: palette[1],
       backgroundColor: palette[1] + "40",
-      pointBackgroundColor: palette[1],
+      pointBackgroundColor: NIVEL_ORDER.map(k => 
+        selectedEdu ? (k === selectedEdu ? palette[1] : palette[1] + "44") : palette[1]
+      ),
+      pointRadius: NIVEL_ORDER.map(k => k === selectedEdu ? 6 : 4),
     },
   ].filter(Boolean) as never[];
 
@@ -120,7 +139,7 @@ function Demografia() {
     .filter(([k]) => incluirSinHijos || k !== "0")
     .sort((a, b) => Number(a[0]) - Number(b[0]));
 
-  const sexoOpts: { value: Sexo; label: string }[] = [
+  const sexoOpts: { value: SexFocus; label: string }[] = [
     { value: "ambos", label: "Ambos" },
     { value: "hombres", label: "Hombres" },
     { value: "mujeres", label: "Mujeres" },
@@ -139,7 +158,7 @@ function Demografia() {
 
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm text-muted-foreground">Mostrar:</span>
-        <Chips value={sexo} onChange={setSexo} options={sexoOpts} />
+        <Chips value={selectedSexFocus} onChange={setSelectedSexFocus} options={sexoOpts} />
       </div>
 
       <ChartCard
@@ -148,12 +167,18 @@ function Demografia() {
         height={380}
       >
         <Bar
-          key={`edad-${sexo}`}
           data={{ labels: EDAD_ORDER.map((k) => EDAD_LABEL[k]), datasets: edadDatasets }}
           options={{
             responsive: true,
             maintainAspectRatio: false,
             scales: { y: { beginAtZero: true } },
+            onClick: (_event, elements) => {
+              if (elements.length > 0) {
+                const idx = elements[0].index;
+                const clickedAge = EDAD_ORDER[idx];
+                setSelectedAge(selectedAge === clickedAge ? null : clickedAge);
+              }
+            },
           }}
         />
       </ChartCard>
@@ -165,9 +190,18 @@ function Demografia() {
           height={420}
         >
           <Radar
-            key={`nivel-${sexo}`}
             data={{ labels: NIVEL_ORDER, datasets: nivelDatasets }}
-            options={{ responsive: true, maintainAspectRatio: false }}
+            options={{ 
+              responsive: true, 
+              maintainAspectRatio: false,
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedEdu = NIVEL_ORDER[idx];
+                  setSelectedEdu(selectedEdu === clickedEdu ? null : clickedEdu);
+                }
+              },
+            }}
           />
         </ChartCard>
 
@@ -182,12 +216,27 @@ function Demografia() {
               datasets: [
                 {
                   data: etnia.map(([, v]) => v),
-                  backgroundColor: palette,
+                  backgroundColor: etnia.map(([k], i) => 
+                    selectedEthnicity 
+                      ? k === selectedEthnicity ? palette[i % palette.length] : palette[i % palette.length] + "44"
+                      : palette[i % palette.length]
+                  ),
                   borderWidth: 0,
                 },
               ],
             }}
-            options={{ responsive: true, maintainAspectRatio: false, cutout: "55%" }}
+            options={{ 
+              responsive: true, 
+              maintainAspectRatio: false, 
+              cutout: "55%",
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedEtnia = etnia[idx][0];
+                  setSelectedEthnicity(selectedEthnicity === clickedEtnia ? null : clickedEtnia);
+                }
+              },
+            }}
           />
         </ChartCard>
       </div>
@@ -224,7 +273,11 @@ function Demografia() {
                 {
                   label: "Parejas",
                   data: hijosOrdered.map(([, v]) => v),
-                  backgroundColor: palette[2],
+                  backgroundColor: hijosOrdered.map(([k]) => 
+                    selectedChildren 
+                      ? k === selectedChildren ? palette[2] : palette[2] + "44"
+                      : palette[2]
+                  ),
                   borderRadius: 6,
                 },
               ],
@@ -234,6 +287,13 @@ function Demografia() {
               maintainAspectRatio: false,
               plugins: { legend: { display: false } },
               scales: escala === "log" ? { y: { type: "logarithmic" } } : { y: { beginAtZero: true } },
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedChild = hijosOrdered[idx][0];
+                  setSelectedChildren(selectedChildren === clickedChild ? null : clickedChild);
+                }
+              },
             }}
           />
         </div>

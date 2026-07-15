@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { FilterProvider } from "../contexts/FilterContext";
+import { useFilters } from "../contexts/FilterContext";
 
 function NotFoundComponent() {
   return (
@@ -89,6 +90,18 @@ const NAV = [
 ] as const;
 
 function Header() {
+  const {
+    selectedProvince, setSelectedProvince,
+    selectedCanton, setSelectedCanton,
+    selectedMonth, setSelectedMonth,
+    selectedCause, setSelectedCause,
+    selectedDuration, setSelectedDuration,
+    selectedAge, setSelectedAge,
+    selectedEdu, setSelectedEdu,
+    selectedEthnicity, setSelectedEthnicity,
+    selectedChildren, setSelectedChildren,
+  } = useFilters();
+
   return (
     <header className="border-b border-border bg-card/70 backdrop-blur sticky top-0 z-10">
       <div className="mx-auto max-w-6xl px-6 py-4 flex flex-wrap items-center justify-between gap-4">
@@ -96,7 +109,63 @@ function Header() {
           <span className="text-lg font-semibold text-foreground font-[var(--font-display)]">Divorcios Ecuador · 2020</span>
           <span className="text-xs text-muted-foreground">Panel interactivo · Fuente: INEC</span>
         </Link>
-        <nav className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedProvince && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
+              📍 {selectedProvince}
+              <button onClick={() => setSelectedProvince(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedCanton && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30">
+              🗺️ {selectedCanton}
+              <button onClick={() => setSelectedCanton(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedMonth && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/30">
+              📅 {selectedMonth}
+              <button onClick={() => setSelectedMonth(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedCause && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-600 border border-yellow-500/30">
+              ⚖️ {selectedCause.slice(0, 15)}...
+              <button onClick={() => setSelectedCause(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedDuration && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 border border-orange-500/30">
+              ⏱️ {selectedDuration} años
+              <button onClick={() => setSelectedDuration(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedAge && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/30">
+              👤 {selectedAge} años
+              <button onClick={() => setSelectedAge(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedEdu && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/30">
+              🎓 {selectedEdu}
+              <button onClick={() => setSelectedEdu(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedEthnicity && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 border border-purple-500/30">
+              🧬 {selectedEthnicity}
+              <button onClick={() => setSelectedEthnicity(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          {selectedChildren && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-600 border border-pink-500/30">
+              👶 {selectedChildren} hij(o/a/s)
+              <button onClick={() => setSelectedChildren(null)} className="hover:text-destructive ml-1">×</button>
+            </span>
+          )}
+          
+          <nav className="flex flex-wrap gap-1 ml-2">
           {NAV.map((n) => (
             <Link
               key={n.to}
@@ -109,7 +178,8 @@ function Header() {
               {n.label}
             </Link>
           ))}
-        </nav>
+          </nav>
+        </div>
       </div>
     </header>
   );

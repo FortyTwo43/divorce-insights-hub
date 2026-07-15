@@ -21,17 +21,39 @@ export interface AggregatedData {
   capitulaciones: Record<string, number>;
 }
 
+export type SexFocus = "hombres" | "mujeres" | "ambos";
+
 interface FilterContextState {
   data: DivorceRecord[];
   filteredData: AggregatedData | null;
+  
   selectedProvince: string | null;
-  setSelectedProvince: (prov: string | null) => void;
+  setSelectedProvince: (v: string | null) => void;
+  selectedCanton: string | null;
+  setSelectedCanton: (v: string | null) => void;
+  selectedMonth: string | null;
+  setSelectedMonth: (v: string | null) => void;
+  selectedCause: string | null;
+  setSelectedCause: (v: string | null) => void;
+  selectedDuration: string | null;
+  setSelectedDuration: (v: string | null) => void;
+  selectedAge: string | null;
+  setSelectedAge: (v: string | null) => void;
+  selectedEdu: string | null;
+  setSelectedEdu: (v: string | null) => void;
+  selectedEthnicity: string | null;
+  setSelectedEthnicity: (v: string | null) => void;
+  selectedChildren: string | null;
+  setSelectedChildren: (v: string | null) => void;
+  selectedSexFocus: SexFocus;
+  setSelectedSexFocus: (v: SexFocus) => void;
+  
   isLoading: boolean;
 }
 
 const FilterContext = createContext<FilterContextState | undefined>(undefined);
 
-function binDuration(aniosStr: string): string {
+export function binDuration(aniosStr: string): string {
   const a = parseInt(aniosStr, 10);
   if (isNaN(a)) return "Sin Información";
   if (a < 1) return "<1";
@@ -42,7 +64,7 @@ function binDuration(aniosStr: string): string {
   return "30+";
 }
 
-function binAge(edadStr: string): string {
+export function binAge(edadStr: string): string {
   const e = parseInt(edadStr, 10);
   if (isNaN(e) || e === 999) return "Sin Información";
   if (e < 25) return "<25";
@@ -56,12 +78,29 @@ function binAge(edadStr: string): string {
 export function FilterProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<DivorceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [selectedCanton, setSelectedCanton] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedCause, setSelectedCause] = useState<string | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<string | null>(null);
+  const [selectedAge, setSelectedAge] = useState<string | null>(null);
+  const [selectedEdu, setSelectedEdu] = useState<string | null>(null);
+  const [selectedEthnicity, setSelectedEthnicity] = useState<string | null>(null);
+  const [selectedChildren, setSelectedChildren] = useState<string | null>(null);
+  const [selectedSexFocus, setSelectedSexFocus] = useState<SexFocus>("ambos");
+
+  // When province changes, reset canton
+  const handleSetProvince = (p: string | null) => {
+    setSelectedProvince(p);
+    if (!p) setSelectedCanton(null);
+  };
 
   useEffect(() => {
     Papa.parse<DivorceRecord>(csvRaw, {
       header: true,
       skipEmptyLines: true,
+      delimiter: ";",
       complete: (results) => {
         setData(results.data);
         setIsLoading(false);
@@ -72,10 +111,54 @@ export function FilterProvider({ children }: { children: ReactNode }) {
   const filteredData = useMemo(() => {
     if (data.length === 0) return null;
 
-    // Si hay una provincia seleccionada, filtramos los datos primero
-    const list = selectedProvince
-      ? data.filter((d) => d.provincia_inscripcion === selectedProvince)
-      : data;
+    let list = data;
+    if (selectedProvince) {
+      list = list.filter((d) => d.provincia_inscripcion === selectedProvince);
+    }
+    if (selectedCanton) {
+      list = list.filter((d) => d.canton_inscripcion === selectedCanton);
+    }
+    if (selectedMonth) {
+      list = list.filter((d) => d.mes_inscripcion === selectedMonth);
+    }
+    if (selectedCause) {
+      list = list.filter((d) => d.causa_divorcio === selectedCause);
+    }
+    if (selectedDuration) {
+      list = list.filter((d) => binDuration(d.duracion_matrimonio_anios) === selectedDuration);
+    }
+    if (selectedChildren) {
+      list = list.filter((d) => (d.hijos_a_cargo_conyuge1 || "0") === selectedChildren);
+    }
+
+    // Demographics filters (depends on sex focus)
+    if (selectedAge) {
+      list = list.filter((d) => {
+        const matchH = binAge(d.edad_conyuge1) === selectedAge;
+        const matchM = binAge(d.edad_conyuge2) === selectedAge;
+        if (selectedSexFocus === "hombres") return matchH;
+        if (selectedSexFocus === "mujeres") return matchM;
+        return matchH || matchM;
+      });
+    }
+    if (selectedEdu) {
+      list = list.filter((d) => {
+        const matchH = d.nivel_instruccion_conyuge1 === selectedEdu;
+        const matchM = d.nivel_instruccion_conyuge2 === selectedEdu;
+        if (selectedSexFocus === "hombres") return matchH;
+        if (selectedSexFocus === "mujeres") return matchM;
+        return matchH || matchM;
+      });
+    }
+    if (selectedEthnicity) {
+      list = list.filter((d) => {
+        const matchH = d.autoidentificacion_etnica_conyuge1 === selectedEthnicity;
+        const matchM = d.autoidentificacion_etnica_conyuge2 === selectedEthnicity;
+        if (selectedSexFocus === "hombres") return matchH;
+        if (selectedSexFocus === "mujeres") return matchM;
+        return matchH || matchM;
+      });
+    }
 
     const agg: AggregatedData = {
       total: list.length,
@@ -111,18 +194,46 @@ export function FilterProvider({ children }: { children: ReactNode }) {
       inc(agg.duracion, binDuration(row.duracion_matrimonio_anios));
       inc(agg.edad_h, binAge(row.edad_conyuge1));
       inc(agg.edad_m, binAge(row.edad_conyuge2));
-      
+
       const hijos = row.hijos_a_cargo_conyuge1 || "0";
       inc(agg.hijos, hijos);
-      
+
       inc(agg.capitulaciones, row.capitulaciones_bienes);
     }
 
     return agg;
-  }, [data, selectedProvince]);
+  }, [
+    data,
+    selectedProvince,
+    selectedCanton,
+    selectedMonth,
+    selectedCause,
+    selectedDuration,
+    selectedAge,
+    selectedEdu,
+    selectedEthnicity,
+    selectedChildren,
+    selectedSexFocus,
+  ]);
 
   return (
-    <FilterContext.Provider value={{ data, filteredData, selectedProvince, setSelectedProvince, isLoading }}>
+    <FilterContext.Provider
+      value={{
+        data,
+        filteredData,
+        selectedProvince, setSelectedProvince: handleSetProvince,
+        selectedCanton, setSelectedCanton,
+        selectedMonth, setSelectedMonth,
+        selectedCause, setSelectedCause,
+        selectedDuration, setSelectedDuration,
+        selectedAge, setSelectedAge,
+        selectedEdu, setSelectedEdu,
+        selectedEthnicity, setSelectedEthnicity,
+        selectedChildren, setSelectedChildren,
+        selectedSexFocus, setSelectedSexFocus,
+        isLoading,
+      }}
+    >
       {children}
     </FilterContext.Provider>
   );
