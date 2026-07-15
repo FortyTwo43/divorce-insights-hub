@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Bar, PolarArea } from "react-chartjs-2";
+import { motion } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { EcuadorMap } from "@/components/EcuadorMap";
-import data from "@/data/divorcios.json";
+import { useFilters } from "@/contexts/FilterContext";
 
 export const Route = createFileRoute("/geografia")({
   head: () => ({ meta: [{ title: "Geografía · Divorcios Ecuador 2020" }] }),
@@ -32,29 +33,38 @@ const REGION_OPTS: { value: Region; label: string }[] = [
 function Geografia() {
   const [region, setRegion] = useState<Region>("todas");
   const [orden, setOrden] = useState<"desc" | "asc">("desc");
+  const { filteredData, isLoading, selectedProvince, data: allData } = useFilters();
 
   const filtered = useMemo(() => {
-    const entries = Object.entries(data.provincia) as [string, number][];
+    if (!filteredData) return [];
+    const entries = Object.entries(filteredData.provincia) as [string, number][];
     const list = region === "todas" ? entries : entries.filter(([k]) => REGIONES[region].includes(k));
     return [...list].sort((a, b) => (orden === "desc" ? b[1] - a[1] : a[1] - b[1]));
-  }, [region, orden]);
+  }, [filteredData, region, orden]);
 
   const mapData = useMemo(() => {
-    if (region === "todas") return data.provincia as Record<string, number>;
+    if (!filteredData) return {};
+    if (region === "todas") return filteredData.provincia;
     const allowed = new Set(REGIONES[region]);
     return Object.fromEntries(
-      Object.entries(data.provincia).filter(([k]) => allowed.has(k)),
+      Object.entries(filteredData.provincia).filter(([k]) => allowed.has(k)),
     ) as Record<string, number>;
-  }, [region]);
+  }, [filteredData, region]);
+
+  if (isLoading || !filteredData) {
+    return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
+  }
 
   const top10 = [...filtered].slice(0, Math.min(10, filtered.length));
 
   return (
-    <div className="space-y-8">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
-        <h1 className="text-3xl md:text-4xl font-semibold text-foreground">Distribución geográfica</h1>
+        <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
+          {selectedProvince ? `Análisis geográfico: ${selectedProvince}` : "Distribución geográfica"}
+        </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
-          Cómo se reparten los divorcios entre las 24 provincias del Ecuador.
+          Cómo se reparten los divorcios entre las provincias del Ecuador. Selecciona una provincia en el mapa para filtrar el resto de los gráficos en las otras pestañas.
         </p>
       </header>
 
@@ -149,6 +159,6 @@ function Geografia() {
           options={{ responsive: true, maintainAspectRatio: false }}
         />
       </ChartCard>
-    </div>
+    </motion.div>
   );
 }

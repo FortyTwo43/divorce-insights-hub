@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Bar, Pie, Line } from "react-chartjs-2";
+import { motion } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
-import data from "@/data/divorcios.json";
+import { useFilters } from "@/contexts/FilterContext";
 
 export const Route = createFileRoute("/causas")({
   head: () => ({ meta: [{ title: "Causas y duración · Divorcios Ecuador 2020" }] }),
@@ -39,21 +40,29 @@ const DUR_LABELS: Record<string, string> = {
 function Causas() {
   const [topN, setTopN] = useState(5);
   const [excluirSinInfo, setExcluirSinInfo] = useState(true);
+  const { filteredData, isLoading, selectedProvince } = useFilters();
 
   const causas = useMemo(() => {
-    const entries = Object.entries(data.causa).sort((a, b) => b[1] - a[1]);
+    if (!filteredData) return [];
+    const entries = Object.entries(filteredData.causa).sort((a, b) => b[1] - a[1]);
     return excluirSinInfo ? entries.filter(([k]) => k !== "Sin Información") : entries;
-  }, [excluirSinInfo]);
+  }, [filteredData, excluirSinInfo]);
+
+  if (isLoading || !filteredData) {
+    return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
+  }
 
   const top = causas.slice(0, topN);
   const otros = causas.slice(topN).reduce((s, [, v]) => s + v, 0);
 
-  const durVals = DUR_ORDER.map((k) => (data.duracion as Record<string, number>)[k] ?? 0);
+  const durVals = DUR_ORDER.map((k) => filteredData.duracion[k] ?? 0);
 
   return (
-    <div className="space-y-8">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
-        <h1 className="text-3xl md:text-4xl font-semibold text-foreground">Causas del divorcio y duración del matrimonio</h1>
+        <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
+          {selectedProvince ? `Causas y duración en ${selectedProvince}` : "Causas del divorcio y duración del matrimonio"}
+        </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
           Motivos legales invocados y cuánto duraron los matrimonios antes de disolverse.
         </p>
@@ -150,6 +159,6 @@ function Causas() {
           }}
         />
       </ChartCard>
-    </div>
+    </motion.div>
   );
 }

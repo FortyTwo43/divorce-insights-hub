@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Bar, Radar, Doughnut } from "react-chartjs-2";
+import { motion } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
-import data from "@/data/divorcios.json";
+import { useFilters } from "@/contexts/FilterContext";
 
 export const Route = createFileRoute("/demografia")({
   head: () => ({ meta: [{ title: "Demografía · Divorcios Ecuador 2020" }] }),
@@ -69,11 +70,16 @@ function Demografia() {
   const [sexo, setSexo] = useState<Sexo>("ambos");
   const [escala, setEscala] = useState<Escala>("log");
   const [incluirSinHijos, setIncluirSinHijos] = useState(true);
+  const { filteredData, isLoading, selectedProvince } = useFilters();
 
-  const edadH = EDAD_ORDER.map((k) => (data.edad_h as Record<string, number>)[k] ?? 0);
-  const edadM = EDAD_ORDER.map((k) => (data.edad_m as Record<string, number>)[k] ?? 0);
-  const nivelH = NIVEL_ORDER.map((k) => (data.nivel_h as Record<string, number>)[k] ?? 0);
-  const nivelM = NIVEL_ORDER.map((k) => (data.nivel_m as Record<string, number>)[k] ?? 0);
+  if (isLoading || !filteredData) {
+    return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
+  }
+
+  const edadH = EDAD_ORDER.map((k) => filteredData.edad_h[k] ?? 0);
+  const edadM = EDAD_ORDER.map((k) => filteredData.edad_m[k] ?? 0);
+  const nivelH = NIVEL_ORDER.map((k) => filteredData.nivel_h[k] ?? 0);
+  const nivelM = NIVEL_ORDER.map((k) => filteredData.nivel_m[k] ?? 0);
 
   const edadDatasets = [
     sexo !== "mujeres" && {
@@ -107,9 +113,9 @@ function Demografia() {
     },
   ].filter(Boolean) as never[];
 
-  const etnia = Object.entries(data.etnia).sort((a, b) => b[1] - a[1]);
+  const etnia = Object.entries(filteredData.etnia).sort((a, b) => b[1] - a[1]);
 
-  const hijosOrdered = Object.entries(data.hijos)
+  const hijosOrdered = Object.entries(filteredData.hijos)
     .filter(([k]) => k !== "99")
     .filter(([k]) => incluirSinHijos || k !== "0")
     .sort((a, b) => Number(a[0]) - Number(b[0]));
@@ -121,9 +127,11 @@ function Demografia() {
   ];
 
   return (
-    <div className="space-y-8">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
-        <h1 className="text-3xl md:text-4xl font-semibold text-foreground">Perfil demográfico</h1>
+        <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
+          {selectedProvince ? `Perfil demográfico en ${selectedProvince}` : "Perfil demográfico"}
+        </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
           Edad, educación, autoidentificación étnica y número de hijos de las personas divorciadas.
         </p>
@@ -230,6 +238,6 @@ function Demografia() {
           />
         </div>
       </ChartCard>
-    </div>
+    </motion.div>
   );
 }

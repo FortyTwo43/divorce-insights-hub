@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { geoMercator, geoPath } from "d3-geo";
+import { useFilters } from "@/contexts/FilterContext";
 import type { FeatureCollection, Geometry } from "geojson";
 import geoData from "@/data/ecuador-provincias.json";
 
@@ -33,6 +34,7 @@ export function EcuadorMap({
   title?: string;
 }) {
   const [hover, setHover] = useState<{ name: string; value: number } | null>(null);
+  const { selectedProvince, setSelectedProvince } = useFilters();
 
   const fc = geoData as unknown as FeatureCollection<Geometry, { name: string }>;
   const max = useMemo(() => Math.max(...Object.values(data)), [data]);
@@ -70,16 +72,19 @@ export function EcuadorMap({
           const value = data[name] ?? 0;
           const d = pathGen(f as never) ?? "";
           const active = hover?.name === name;
+          const isSelected = selectedProvince === name;
+          const isFaded = selectedProvince !== null && !isSelected;
           return (
             <path
               key={i}
               d={d}
               fill={colorFor(value, max)}
-              stroke={active ? "#0f172a" : "#ffffff"}
-              strokeWidth={active ? 1.5 : 0.7}
-              style={{ cursor: "pointer", transition: "stroke 120ms" }}
+              stroke={active || isSelected ? "#0f172a" : "#ffffff"}
+              strokeWidth={active || isSelected ? 1.5 : 0.7}
+              style={{ cursor: "pointer", transition: "all 200ms", opacity: isFaded ? 0.3 : 1 }}
               onMouseEnter={() => setHover({ name, value })}
               onMouseLeave={() => setHover(null)}
+              onClick={() => setSelectedProvince(isSelected ? null : name)}
             >
               <title>{`${name}: ${value.toLocaleString()} divorcios`}</title>
             </path>

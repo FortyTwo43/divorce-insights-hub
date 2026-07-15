@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Bar, Doughnut } from "react-chartjs-2";
+import { motion } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
-import data from "@/data/divorcios.json";
+import { useFilters } from "@/contexts/FilterContext";
+import { AnimatedNumber } from "@/components/AnimatedNumber";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Resumen · Divorcios Ecuador 2020" }] }),
@@ -12,39 +14,52 @@ export const Route = createFileRoute("/")({
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-5">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ duration: 0.4 }}
+      className="bg-card border border-border rounded-xl p-5"
+    >
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="text-3xl font-semibold text-foreground mt-2">{value}</div>
       {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
-    </div>
+    </motion.div>
   );
 }
 
 function Resumen() {
-  const mesData = MESES.map((m) => (data.mes as Record<string, number>)[m] ?? 0);
-  const areaLabels = Object.keys(data.area);
-  const areaVals = Object.values(data.area);
+  const { filteredData, isLoading, selectedProvince } = useFilters();
 
-  const topProv = Object.entries(data.provincia).slice(0, 8);
-  const urbanoPct = ((data.area.Urbana / data.total) * 100).toFixed(1);
+  if (isLoading || !filteredData) {
+    return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
+  }
+
+  const mesData = MESES.map((m) => filteredData.mes[m] ?? 0);
+  const areaLabels = Object.keys(filteredData.area);
+  const areaVals = Object.values(filteredData.area);
+
+  const topProv = Object.entries(filteredData.provincia).sort((a,b) => b[1] - a[1]).slice(0, 8);
+  const urbanoPct = filteredData.total > 0 ? ((filteredData.area.Urbana / filteredData.total) * 100).toFixed(1) : "0";
 
   return (
-    <div className="space-y-8">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <section>
         <p className="text-xs uppercase tracking-widest text-accent font-semibold">Ecuador · INEC</p>
-        <h1 className="text-4xl md:text-5xl font-semibold mt-2 text-foreground">Divorcios registrados en 2020</h1>
+        <h1 className="text-4xl md:text-5xl font-semibold mt-2 text-foreground">
+          {selectedProvince ? `Divorcios en ${selectedProvince} (2020)` : "Divorcios registrados en 2020"}
+        </h1>
         <p className="mt-3 text-muted-foreground max-w-2xl">
-          Exploración interactiva de {data.total.toLocaleString("es-EC")} divorcios inscritos en Ecuador durante 2020. Navega entre las secciones para descubrir patrones geográficos, causas y perfiles demográficos.
+          Exploración interactiva de {filteredData.total.toLocaleString("es-EC")} divorcios inscritos {selectedProvince ? `en la provincia de ${selectedProvince}` : "en Ecuador"} durante 2020. 
         </p>
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Total de divorcios" value={data.total.toLocaleString("es-EC")} sub="Registrados en 2020" />
-        <Stat label="Zona urbana" value={`${urbanoPct}%`} sub={`${data.area.Urbana.toLocaleString("es-EC")} casos`} />
-        <Stat label="Vía notarial" value={data.causa["Por mutuo consentimiento vía notarial"].toLocaleString("es-EC")} sub="Mutuo acuerdo" />
-        <Stat label="Provincia líder" value="Guayas" sub={`${data.provincia.Guayas.toLocaleString("es-EC")} divorcios`} />
+        <Stat label="Total de divorcios" value={<AnimatedNumber value={filteredData.total} />} sub="Registrados en 2020" />
+        <Stat label="Zona urbana" value={`${urbanoPct}%`} sub={`${(filteredData.area.Urbana || 0).toLocaleString("es-EC")} casos`} />
+        <Stat label="Vía notarial" value={<AnimatedNumber value={filteredData.causa["Por mutuo consentimiento vía notarial"] || 0} />} sub="Mutuo acuerdo" />
+        <Stat label="Líder (por total)" value={topProv.length > 0 ? topProv[0][0] : "-"} sub={topProv.length > 0 ? `${topProv[0][1].toLocaleString("es-EC")} divorcios` : ""} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -100,9 +115,9 @@ function Resumen() {
         <ChartCard title="Régimen de bienes" description="Parejas con o sin capitulaciones matrimoniales.">
           <Doughnut
             data={{
-              labels: Object.keys(data.capitulaciones),
+              labels: Object.keys(filteredData.capitulaciones),
               datasets: [{
-                data: Object.values(data.capitulaciones),
+                data: Object.values(filteredData.capitulaciones),
                 backgroundColor: [palette[3], palette[4], palette[5]],
                 borderWidth: 0,
               }],
@@ -111,6 +126,6 @@ function Resumen() {
           />
         </ChartCard>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { FilterProvider } from "../contexts/FilterContext";
 
 function NotFoundComponent() {
   return (
@@ -118,15 +119,17 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 mx-auto max-w-6xl w-full px-6 py-10">
-          <Outlet />
-        </main>
-        <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-          Datos: Registro Estadístico de Matrimonios y Divorcios · INEC 2020
-        </footer>
-      </div>
+      <FilterProvider>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1 mx-auto max-w-6xl w-full px-6 py-10">
+            <Outlet />
+          </main>
+          <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
+            Datos: Registro Estadístico de Matrimonios y Divorcios · INEC 2020
+          </footer>
+        </div>
+      </FilterProvider>
     </QueryClientProvider>
   );
 }
