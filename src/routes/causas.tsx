@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Bar, Pie, Line } from "react-chartjs-2";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters } from "@/contexts/FilterContext";
 import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
+import { HeroBadge } from "@/components/HeroBadge";
+import { LegalGlossary } from "@/components/LegalGlossary";
+import { ContextNote } from "@/components/ContextNote";
 
 export const Route = createFileRoute("/causas")({
   head: () => ({ meta: [{ title: "Causas y duración · Divorcios Ecuador 2020" }] }),
@@ -38,8 +41,24 @@ const DUR_LABELS: Record<string, string> = {
   "30+": "Más de 30 años",
 };
 
+// Datos reales de duración promedio por causal
+const DUR_PROMEDIO: Array<{ clave: string; causa: string; duracion: string; anios: number }> = [
+  { clave: "Por mutuo consentimiento vía notarial", causa: "Mutuo acuerdo notarial", duracion: "15,4 años", anios: 15.4 },
+  { clave: "Por mutuo consentimiento vía judicial", causa: "Mutuo acuerdo judicial", duracion: "13,6 años", anios: 13.6 },
+  { clave: "El abandono injustificado de cualquiera de los cónyuges por más de seis meses ininterrumpidos", causa: "Abandono injustificado", duracion: "16,6 años", anios: 16.6 },
+  { clave: "El estado habitual de falta de armonía de las dos voluntades en la vida matrimonial", causa: "Falta de armonía", duracion: "14,4 años", anios: 14.4 },
+  { clave: "Los tratos crueles o violencia contra la mujer o miembros del núcleo familiar", causa: "Violencia intrafamiliar", duracion: "15,0 años", anios: 15.0 },
+  { clave: "Las Amenazas graves de un cónyuge contra la vida del otro", causa: "Amenazas graves", duracion: "16,0 años", anios: 16.0 },
+  { clave: "La condena ejecutoriada a pena privativa de la libertad mayor a diez años", causa: "Condena penal >10 años", duracion: "18,6 años", anios: 18.6 },
+  { clave: "El adulterio de uno de los cónyuges", causa: "Adulterio", duracion: "14,3 años", anios: 14.3 },
+  { clave: "El que uno de los cónyuges sea ebrio consuetudinario o toxicómano", causa: "Alcoholismo / drogas", duracion: "16,6 años", anios: 16.6 },
+  { clave: "Los actos ejecutados por uno de los cónyuges con el fin de involucrar al otro o a los hijos en actividades ilícitas", causa: "Actividades ilícitas", duracion: "29,0 años", anios: 29.0 },
+];
+
+const MAX_DUR = Math.max(...DUR_PROMEDIO.map((r) => r.anios));
+
 const CAUSE_INSIGHTS = {
-  priority: ["cause", "duration"],
+  priority: ["cause", "duration"] as const,
   overviewText:
     "Más del 71% de los divorcios de 2020 fueron por mutuo consentimiento, lo que sugiere que la mayoría de separaciones se resolvieron de forma acordada, incluso durante la pandemia.",
   details: {
@@ -114,6 +133,85 @@ const CAUSE_INSIGHTS = {
   },
 } satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
 
+function CausaContextCard({ causa }: { causa: string }) {
+  const row = DUR_PROMEDIO.find((r) => r.clave === causa);
+  const corta = CAUSA_CORTA[causa] ?? causa;
+  const detail = CAUSE_INSIGHTS.details[causa as keyof typeof CAUSE_INSIGHTS.details];
+  if (!detail) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5"
+    >
+      <div className="flex items-start gap-3">
+        <span className="text-lg shrink-0">⚖️</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-base font-semibold text-foreground">{corta}</span>
+            {row && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium border border-primary/20">
+                ⏱ {row.duracion} promedio
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-foreground leading-relaxed">
+            {detail.interpretiveText}
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function DurationTable({ selectedCause }: { selectedCause: string | null }) {
+  return (
+    <div className="rounded-xl border border-border overflow-hidden">
+      <div className="bg-secondary/40 px-4 py-2.5 flex items-center justify-between">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          Duración promedio del matrimonio por causal
+        </span>
+        <span className="text-[11px] text-muted-foreground">Fuente: INEC 2020</span>
+      </div>
+      <table className="w-full text-sm">
+        <tbody className="divide-y divide-border">
+          {DUR_PROMEDIO.map((row, i) => {
+            const isActive = selectedCause === row.clave;
+            const barPct = (row.anios / MAX_DUR) * 100;
+            return (
+              <tr
+                key={row.clave}
+                className={`transition-colors ${isActive ? "bg-primary/8" : i % 2 === 0 ? "bg-card" : "bg-secondary/10"}`}
+              >
+                <td className="px-4 py-2.5">
+                  <span className={`text-sm ${isActive ? "font-semibold text-primary" : "text-foreground"}`}>
+                    {row.causa}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 w-40">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${isActive ? "bg-primary" : "bg-primary/40"}`}
+                        style={{ width: `${barPct}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs tabular-nums font-semibold w-14 text-right ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                      {row.duracion}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Causas() {
   const [topN, setTopN] = useState(5);
   const [excluirSinInfo, setExcluirSinInfo] = useState(true);
@@ -128,6 +226,12 @@ function Causas() {
   if (isLoading || !filteredData) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
   }
+
+  // Calcular el porcentaje de mutuo consentimiento real
+  const mutualNotarial = filteredData.causa["Por mutuo consentimiento vía notarial"] ?? 0;
+  const mutualJudicial = filteredData.causa["Por mutuo consentimiento vía judicial"] ?? 0;
+  const totalMutual = mutualNotarial + mutualJudicial;
+  const pctMutual = filteredData.total > 0 ? ((totalMutual / filteredData.total) * 100).toFixed(1) : "71.0";
 
   const top = causas.slice(0, topN);
   const otros = causas.slice(topN).reduce((s, [, v]) => s + v, 0);
@@ -145,6 +249,14 @@ function Causas() {
           Motivos legales invocados y cuánto duraron los matrimonios antes de disolverse.
         </p>
       </header>
+
+      {/* Hero badge — siempre visible, prominente */}
+      <HeroBadge
+        value={`${pctMutual}%`}
+        label="de los divorcios fueron por mutuo consentimiento"
+        sublabel={`${totalMutual.toLocaleString("es-EC")} casos acordados entre ambos cónyuges — vía notarial (${mutualNotarial.toLocaleString("es-EC")}) + judicial (${mutualJudicial.toLocaleString("es-EC")})`}
+        color="primary"
+      />
 
       <div className="flex flex-wrap items-center gap-4">
         <label className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -166,12 +278,19 @@ function Causas() {
             onChange={(e) => setExcluirSinInfo(e.target.checked)}
             className="accent-primary"
           />
-          Excluir “Sin información”
+          Excluir "Sin información"
         </label>
       </div>
 
+      {/* Tarjeta contextual de la causa seleccionada */}
+      <AnimatePresence mode="wait">
+        {selectedCause && (
+          <CausaContextCard key={selectedCause} causa={selectedCause} />
+        )}
+      </AnimatePresence>
+
       <div className="grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Motivos legales del divorcio" description="Ranking completo de las causales invocadas." height={440}>
+        <ChartCard title="Motivos legales del divorcio" description="Clic en una barra para ver su definición legal." height={440}>
           <Bar
             key={`causas-${excluirSinInfo}`}
             data={{
@@ -241,43 +360,65 @@ function Causas() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Años transcurridos hasta el divorcio" description="Duración del matrimonio al momento de disolverse." height={360}>
-        <Line
-          data={{
-            labels: DUR_ORDER.map((k) => DUR_LABELS[k]),
-            datasets: [
-              {
-                label: "Matrimonios disueltos",
-                data: durVals,
-                borderColor: palette[1],
-                backgroundColor: palette[1] + "33",
-                borderWidth: 2,
-                pointBackgroundColor: DUR_ORDER.map(k => 
-                  selectedDuration 
-                    ? k === selectedDuration ? palette[1] : palette[1] + "44"
-                    : palette[1]
-                ),
-                pointRadius: DUR_ORDER.map(k => k === selectedDuration ? 6 : 4),
-                fill: true,
-                tension: 0.3,
-              },
-            ],
-          }}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } },
-            onClick: (_event, elements) => {
-              if (elements.length > 0) {
-                const idx = elements[0].index;
-                const clickedDur = DUR_ORDER[idx];
-                setSelectedDuration(selectedDuration === clickedDur ? null : clickedDur);
-              }
-            },
-          }}
-        />
-      </ChartCard>
+      {/* Glosario legal — siempre visible, interactivo */}
+      <div className="rounded-2xl border border-border bg-card/80 p-5">
+        <LegalGlossary />
+      </div>
+
+      {/* Gráfico duración + tabla de promedios */}
+      <div className="space-y-4">
+        <ContextNote icon="⏱️" title="Promedio nacional:" variant="info">
+          Los matrimonios que se divorciaron en 2020 duraron en promedio{" "}
+          <span className="font-semibold">15 años</span> antes de disolverse.
+          La causal con matrimonios más cortos es{" "}
+          <span className="font-semibold">mutuo acuerdo judicial (13,6 años)</span> y la más larga
+          {" "}<span className="font-semibold">actividades ilícitas (29,0 años)</span>.
+          Clic en el gráfico o en la tabla para filtrar.
+        </ContextNote>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ChartCard title="Años transcurridos hasta el divorcio" description="Distribución por rango de duración del matrimonio." height={360}>
+            <Line
+              data={{
+                labels: DUR_ORDER.map((k) => DUR_LABELS[k]),
+                datasets: [
+                  {
+                    label: "Matrimonios disueltos",
+                    data: durVals,
+                    borderColor: palette[1],
+                    backgroundColor: palette[1] + "33",
+                    borderWidth: 2,
+                    pointBackgroundColor: DUR_ORDER.map(k => 
+                      selectedDuration 
+                        ? k === selectedDuration ? palette[1] : palette[1] + "44"
+                        : palette[1]
+                    ),
+                    pointRadius: DUR_ORDER.map(k => k === selectedDuration ? 6 : 4),
+                    fill: true,
+                    tension: 0.3,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } },
+                onClick: (_event, elements) => {
+                  if (elements.length > 0) {
+                    const idx = elements[0].index;
+                    const clickedDur = DUR_ORDER[idx];
+                    setSelectedDuration(selectedDuration === clickedDur ? null : clickedDur);
+                  }
+                },
+              }}
+            />
+          </ChartCard>
+
+          {/* Tabla de duración por causal — siempre visible */}
+          <DurationTable selectedCause={selectedCause} />
+        </div>
+      </div>
     </motion.div>
     </InsightPanelProvider>
   );

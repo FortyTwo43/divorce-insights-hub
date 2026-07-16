@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Bar, PolarArea } from "react-chartjs-2";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { EcuadorMap } from "@/components/EcuadorMap";
 import { useFilters } from "@/contexts/FilterContext";
 import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
+import { ContextNote } from "@/components/ContextNote";
 
 export const Route = createFileRoute("/geografia")({
   head: () => ({ meta: [{ title: "Geografía · Divorcios Ecuador 2020" }] }),
@@ -31,30 +32,140 @@ const REGION_OPTS: { value: Region; label: string }[] = [
   { value: "insular", label: "Insular" },
 ];
 
+// Ficha de detalle por provincia — información contextual específica
+const PROVINCIA_DETALLE: Record<string, {
+  nota: string;
+  causaModal: string;
+  tipoCausa: "notarial" | "judicial" | "otra";
+  datoClave?: string;
+}> = {
+  Guayas: {
+    nota: "La provincia más poblada del país lidera en volumen absoluto por razones demográficas, no por mayor conflicto matrimonial por habitante. El mismo patrón se repite en cualquier trámite civil.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Guayaquil — mayor ciudad del Ecuador",
+  },
+  Pichincha: {
+    nota: "Segundo polo poblacional; su volumen responde principalmente al tamaño de la población urbana de Quito. No hay evidencia de una tasa de divorcio inusualmente alta respecto a su población.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Quito — capital del Ecuador",
+  },
+  Azuay: {
+    nota: "Destaca porque el trámite judicial pesa más que el notarial, a diferencia del patrón nacional. Esto puede reflejar una mayor proporción de parejas con hijos menores o bienes a liquidar, o un distinto uso de las notarías en la región.",
+    causaModal: "Mutuo acuerdo vía judicial (predomina sobre notarial)",
+    tipoCausa: "judicial",
+    datoClave: "Inversión notarial/judicial respecto al patrón nacional",
+  },
+  Chimborazo: {
+    nota: "Provincia útil para comparar la concentración absoluta frente a su tamaño poblacional. Riobamba es la capital y concentra la mayoría de los casos provinciales.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Riobamba — polo regional del centro-sierra",
+  },
+  Manabí: {
+    nota: "Tercera provincia por población; su volumen es consistente con el tamaño demográfico de la Costa ecuatoriana.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Portoviejo",
+  },
+  Cañar: {
+    nota: "Caso interesante para revisar la concentración relativa: tiene una proporción de divorcios notable respecto a su población, parcialmente explicada por el fenómeno migratorio que genera mayor inestabilidad en los vínculos matrimoniales.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Alta emigración histórica — factor de riesgo matrimonial",
+  },
+  Loja: {
+    nota: "Provincia del sur sierra con patrón estándar. Su capital concentra la mayor parte de los registros provinciales.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Loja",
+  },
+};
+
+const TIPO_COLOR = {
+  notarial: "text-primary bg-primary/10 border-primary/20",
+  judicial: "text-violet-700 bg-violet-50 border-violet-200",
+  otra: "text-muted-foreground bg-secondary/40 border-border",
+};
+
+function ProvinceDetailCard({ province }: { province: string }) {
+  const detalle = PROVINCIA_DETALLE[province];
+  if (!detalle) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.25 }}
+        className="rounded-xl border border-border bg-secondary/20 px-4 py-3.5"
+      >
+        <div className="flex items-start gap-3">
+          <span className="text-lg shrink-0">📍</span>
+          <p className="text-sm text-muted-foreground">
+            Provincia seleccionada: <span className="font-semibold text-foreground">{province}</span>.
+            Selecciona un cantón en el gráfico inferior para ver el detalle.
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-xl border border-primary/15 bg-primary/5 px-4 py-4 space-y-3"
+    >
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">📍</span>
+          <span className="text-base font-semibold text-foreground">{province}</span>
+        </div>
+        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${TIPO_COLOR[detalle.tipoCausa]}`}>
+          {detalle.causaModal}
+        </span>
+      </div>
+      <p className="text-sm text-foreground leading-relaxed">{detalle.nota}</p>
+      {detalle.datoClave && (
+        <div className="flex items-start gap-2 rounded-lg bg-background/80 border border-border px-3 py-2">
+          <span className="text-xs mt-0.5">📌</span>
+          <p className="text-xs text-muted-foreground">{detalle.datoClave}</p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
 const GEOGRAFIA_INSIGHTS = {
-  priority: ["canton", "province"],
+  priority: ["canton", "province"] as const,
   overviewText:
     "Guayas y Pichincha concentran la mayor cantidad de divorcios porque son las provincias más pobladas del país, no porque ahí existan más conflictos matrimoniales por persona. El mismo patrón se repite en cualquier trámite civil.",
   details: {
     Guayas: {
       label: "Guayas",
-      interpretiveText: "Lidera por volumen absoluto y refleja el peso demográfico de la provincia más poblada.",
+      interpretiveText: "Lidera por volumen absoluto y refleja el peso demográfico de la provincia más poblada. Causa modal: mutuo consentimiento notarial.",
     },
     Pichincha: {
       label: "Pichincha",
-      interpretiveText: "Segundo gran polo poblacional; su volumen responde principalmente al tamaño de la población.",
+      interpretiveText: "Segundo gran polo poblacional; su volumen responde principalmente al tamaño de la población de Quito.",
     },
     Azuay: {
       label: "Azuay",
-      interpretiveText: "Aquí el trámite judicial pesa más que el notarial, una señal de estructura familiar distinta o de distinto uso de notarías.",
+      interpretiveText: "El trámite judicial pesa más que el notarial — inversión del patrón nacional. Posible mayor proporción de parejas con hijos menores.",
     },
     Chimborazo: {
       label: "Chimborazo",
-      interpretiveText: "Provincia útil para comparar concentración absoluta frente a provincias más grandes.",
+      interpretiveText: "Provincia comparadora útil para entender la concentración relativa frente al tamaño poblacional.",
     },
     Cañar: {
       label: "Cañar",
-      interpretiveText: "Caso interesante para revisar concentración relativa frente a la población provincial.",
+      interpretiveText: "Alta emigración histórica como factor de inestabilidad matrimonial — concentración relativa notable.",
+    },
+    Manabí: {
+      label: "Manabí",
+      interpretiveText: "Tercera provincia costeña; volumen consistente con su peso demográfico.",
     },
   },
 } satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
@@ -62,17 +173,15 @@ const GEOGRAFIA_INSIGHTS = {
 function Geografia() {
   const [region, setRegion] = useState<Region>("todas");
   const [orden, setOrden] = useState<"desc" | "asc">("desc");
-  const { filteredData, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton, data: allData } = useFilters();
+  const { filteredData, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton } = useFilters();
 
   const filtered = useMemo(() => {
     if (!filteredData) return [];
     let entries: [string, number][] = [];
     
     if (selectedProvince) {
-      // Si hay una provincia seleccionada, mostramos cantones
       entries = Object.entries(filteredData.canton);
     } else {
-      // Si no, mostramos provincias y aplicamos filtro de región
       entries = Object.entries(filteredData.provincia);
       if (region !== "todas") {
         entries = entries.filter(([k]) => REGIONES[region].includes(k));
@@ -105,9 +214,28 @@ function Geografia() {
           {selectedProvince ? `Análisis geográfico: ${selectedProvince}` : "Distribución geográfica"}
         </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
-          Cómo se reparten los divorcios entre las provincias del Ecuador. Selecciona una provincia en el mapa para filtrar el resto de los gráficos en las otras pestañas.
+          Cómo se reparten los divorcios entre las provincias del Ecuador. Selecciona una provincia en el mapa para filtrar el resto de los gráficos.
         </p>
       </header>
+
+      {/* Nota de concentración — siempre visible, prominente */}
+      {!selectedProvince && (
+        <ContextNote icon="🗺️" title="Concentración poblacional, no conflicto:" variant="info">
+          <span className="font-semibold">Guayas</span> y <span className="font-semibold">Pichincha</span> lideran
+          en divorcios porque son las dos provincias más habitadas del Ecuador —{" "}
+          no porque sus habitantes se divorcien más que el resto.
+          El mismo patrón ocurre con cualquier trámite civil: matrimonios, nacimientos, defunciones.{" "}
+          <span className="font-semibold">Azuay</span> es la excepción más interesante: ahí el trámite{" "}
+          <span className="font-semibold">judicial supera al notarial</span>, inversión del patrón nacional.
+        </ContextNote>
+      )}
+
+      {/* Ficha de provincia seleccionada — aparece al seleccionar */}
+      <AnimatePresence mode="wait">
+        {selectedProvince && (
+          <ProvinceDetailCard key={selectedProvince} province={selectedProvince} />
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-wrap items-center gap-3">
         {!selectedProvince && (
@@ -155,6 +283,13 @@ function Geografia() {
       >
         <EcuadorMap data={mapData} />
       </ChartCard>
+
+      {/* Nota bajo el mapa — fija */}
+      <ContextNote icon="📊" variant="highlight">
+        El color del mapa refleja el <span className="font-semibold">volumen absoluto</span>, no la tasa por habitante.
+        Para comparar provincias de distinto tamaño, considera que Guayas tiene ~4,4 millones de habitantes
+        y Galápagos apenas ~33.000. Clic en una barra del ranking para seleccionar esa provincia y ver su detalle.
+      </ContextNote>
 
       <ChartCard
         title={selectedProvince ? `Divorcios por cantón (${selectedProvince})` : "Divorcios por provincia"}

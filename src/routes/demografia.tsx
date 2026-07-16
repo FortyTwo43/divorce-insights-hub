@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Bar, Radar, Doughnut } from "react-chartjs-2";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters, SexFocus } from "@/contexts/FilterContext";
 import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
+import { ContextNote } from "@/components/ContextNote";
+import { HeroBadge } from "@/components/HeroBadge";
 
 export const Route = createFileRoute("/demografia")({
   head: () => ({ meta: [{ title: "Demografía · Divorcios Ecuador 2020" }] }),
@@ -36,14 +38,60 @@ const NIVEL_ORDER = [
   "Posgrado",
 ];
 
+// Fichas de detalle por rango de edad al seleccionar
+const EDAD_DETALLE: Record<string, { titulo: string; interpretacion: string; dato?: string }> = {
+  "<25": {
+    titulo: "Menores de 25 años",
+    interpretacion: "Rango muy temprano dentro de la trayectoria marital. Matrimonios jóvenes con poca duración acumulada.",
+    dato: "Son los divorcios más tempranos en tiempo absoluto.",
+  },
+  "25-34": {
+    titulo: "25 a 34 años",
+    interpretacion: "Tramo de divorcios relativamente tempranos. Coincide con la fase de consolidación profesional y familiar, donde los conflictos de pareja son más frecuentes.",
+    dato: "Grupo con mayor movilidad geográfica y educativa.",
+  },
+  "35-44": {
+    titulo: "35 a 44 años",
+    interpretacion: "Tramo central de la distribución. Corresponde a matrimonios de duración media, muchos con hijos a cargo.",
+    dato: "Rango más representado en la serie total.",
+  },
+  "45-54": {
+    titulo: "45 a 54 años",
+    interpretacion: "Edad madura todavía muy representada. Los hijos ya pueden ser mayores de edad, lo que facilita el trámite notarial.",
+    dato: "Alta proporción de mutuo consentimiento en este rango.",
+  },
+  "55-64": {
+    titulo: "55 a 64 años",
+    interpretacion: "Grupo de trayectorias matrimoniales largas. Muchos de estos matrimonios superan los 20-25 años de duración antes de la disolución.",
+    dato: "Promedio de duración antes del divorcio: superior a 20 años.",
+  },
+  "65+": {
+    titulo: "65 años o más",
+    interpretacion: "Casos menos frecuentes pero presentes. Divorcios en etapa de retiro o vejez, generalmente de larga duración matrimonial.",
+    dato: "Trayectorias matrimoniales muy largas, muchas veces 30+ años.",
+  },
+};
+
+const ETNIA_DETALLE: Record<string, string> = {
+  Mestiza: "Categoría dominante, consistente con la composición étnica del Ecuador (aprox. 71,9% según el censo).",
+  Indigena: "Autoidentificación minoritaria dentro del total nacional de divorcios registrados.",
+  "Afroecuatoriana /afrodescendiente": "Categoría con presencia en el registro, consistente con la distribución poblacional.",
+  Montubia: "Presencia menor, relevante especialmente en zonas rurales de la Costa.",
+  Blanca: "Grupo minoritario en el conjunto total de divorcios.",
+  Mulata: "Categoría minoritaria en la distribución general.",
+  Negra: "Autoidentificación poco frecuente en el total de la serie.",
+  Otro: "Categoría residual de autoidentificación étnica.",
+  "Sin Información": "Registros sin dato de autoidentificación declarado.",
+};
+
 const DEMOGRAFIA_INSIGHTS = {
-  priority: ["age", "education", "ethnicity", "children"],
+  priority: ["age", "education", "ethnicity", "children"] as const,
   overviewText:
-    "La estructura demográfica se concentra en edades medias, educación media/bachillerato, residencia urbana y autoidentificación mestiza. El panel permite revisar cada dimensión sin perder el contexto general.",
+    "La estructura demográfica se concentra en edades medias (35-44), nivel bachillerato, residencia urbana (~80%) y autoidentificación mestiza. El promedio nacional de duración matrimonial antes del divorcio es de 15 años. Clic en cualquier segmento para ver el detalle.",
   details: {
     "<25": { label: "Menos de 25", interpretiveText: "Rango muy temprano dentro de la trayectoria marital." },
     "25-34": { label: "25 a 34", interpretiveText: "Edad de divorcio relativamente temprana dentro de la serie." },
-    "35-44": { label: "35 a 44", interpretiveText: "Tramo central de la distribución por edad." },
+    "35-44": { label: "35 a 44", interpretiveText: "Tramo central de la distribución por edad. El más representado." },
     "45-54": { label: "45 a 54", interpretiveText: "Edad madura, todavía muy representada en la serie." },
     "55-64": { label: "55 a 64", interpretiveText: "Grupo de trayectorias matrimoniales más largas." },
     "65+": { label: "65 o más", interpretiveText: "Casos menos frecuentes pero aún presentes en la distribución." },
@@ -51,20 +99,20 @@ const DEMOGRAFIA_INSIGHTS = {
     Primaria: { label: "Primaria", interpretiveText: "Nivel básico con peso relevante en la serie." },
     "Educación básica": { label: "Educación básica", interpretiveText: "Nivel intermedio de instrucción." },
     Secundaria: { label: "Secundaria", interpretiveText: "Tramo importante dentro del perfil educativo." },
-    "Educación media / Bachillerato": { label: "Bachillerato", interpretiveText: "Nivel más frecuente en la serie." },
+    "Educación media / Bachillerato": { label: "Bachillerato", interpretiveText: "Nivel más frecuente en la serie de divorcios 2020." },
     "Superior no Universitario": { label: "Superior no universitario", interpretiveText: "Formación técnica o terciaria no universitaria." },
     "Superior Universitario": { label: "Superior universitario", interpretiveText: "Nivel universitario con presencia alta en la serie." },
     Posgrado: { label: "Posgrado", interpretiveText: "Nivel de posgrado, menos frecuente pero visible." },
     Indigena: { label: "Indígena", interpretiveText: "Autoidentificación minoritaria dentro del total nacional." },
-    Mestiza: { label: "Mestiza", interpretiveText: "Categoría dominante, consistente con la composición del país." },
-    Montubia: { label: "Montubia", interpretiveText: "Presencia menor, pero relevante en el registro." },
+    Mestiza: { label: "Mestiza", interpretiveText: "Categoría dominante, consistente con la composición del país (~71,9%)." },
+    Montubia: { label: "Montubia", interpretiveText: "Presencia menor, relevante en zonas rurales de la Costa." },
     Blanca: { label: "Blanca", interpretiveText: "Grupo minoritario dentro del conjunto." },
     Mulata: { label: "Mulata", interpretiveText: "Grupo minoritario en la serie." },
     Negra: { label: "Negra", interpretiveText: "Autoidentificación poco frecuente en el total." },
     "Afroecuatoriana /afrodescendiente": { label: "Afroecuatoriana", interpretiveText: "Categoría minoritaria en la distribución." },
     Otro: { label: "Otro", interpretiveText: "Categoría residual de autoidentificación." },
     "Sin Información": { label: "Sin información", interpretiveText: "Registro sin dato de autoidentificación." },
-    "0": { label: "Sin hijos", interpretiveText: "La mayoría de parejas no reporta hijos a cargo." },
+    "0": { label: "Sin hijos", interpretiveText: "La mayoría de parejas no reporta hijos a cargo al momento del divorcio." },
     "1": { label: "1 hijo", interpretiveText: "Casos con un hijo a cargo." },
     "2": { label: "2 hijos", interpretiveText: "Casos con dos hijos a cargo." },
     "3": { label: "3 hijos", interpretiveText: "Casos con tres hijos a cargo." },
@@ -98,6 +146,82 @@ function Chips<T extends string>({
           {o.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+function EdadContextCard({ edad }: { edad: string }) {
+  const d = EDAD_DETALLE[edad];
+  if (!d) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5 space-y-1.5"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-lg">👤</span>
+        <span className="text-base font-semibold text-foreground">{d.titulo}</span>
+      </div>
+      <p className="text-sm text-foreground leading-relaxed">{d.interpretacion}</p>
+      {d.dato && (
+        <div className="flex items-start gap-2 rounded-lg bg-background/80 border border-border px-3 py-2">
+          <span className="text-xs mt-0.5">📌</span>
+          <p className="text-xs text-muted-foreground">{d.dato}</p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function EtniaContextCard({ etnia }: { etnia: string }) {
+  const texto = ETNIA_DETALLE[etnia] ?? `Autoidentificación: ${etnia}.`;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3"
+    >
+      <div className="flex items-start gap-3">
+        <span className="text-lg shrink-0">🧬</span>
+        <div>
+          <span className="text-sm font-semibold text-foreground">{etnia}:</span>{" "}
+          <span className="text-sm text-foreground leading-relaxed">{texto}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function DurationContextCard({ filteredData }: { filteredData: NonNullable<ReturnType<typeof useFilters>["filteredData"]> }) {
+  const duracion = filteredData.duracion;
+  const cortos = (duracion["<1"] ?? 0) + (duracion["1-5"] ?? 0);
+  const largos = (duracion["21-30"] ?? 0) + (duracion["30+"] ?? 0);
+  const total = filteredData.total;
+  const pctCortos = total > 0 ? ((cortos / total) * 100).toFixed(1) : "0";
+  const pctLargos = total > 0 ? ((largos / total) * 100).toFixed(1) : "0";
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className="rounded-xl border border-border bg-card px-4 py-3.5 text-center">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">Matrimonios cortos</div>
+        <div className="mt-1 text-2xl font-bold text-foreground">{pctCortos}%</div>
+        <div className="text-xs text-muted-foreground mt-0.5">menos de 5 años</div>
+      </div>
+      <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5 text-center">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">Promedio nacional</div>
+        <div className="mt-1 text-2xl font-bold text-primary">~15 años</div>
+        <div className="text-xs text-muted-foreground mt-0.5">duración antes del divorcio</div>
+      </div>
+      <div className="rounded-xl border border-border bg-card px-4 py-3.5 text-center">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">Matrimonios largos</div>
+        <div className="mt-1 text-2xl font-bold text-foreground">{pctLargos}%</div>
+        <div className="text-xs text-muted-foreground mt-0.5">más de 20 años</div>
+      </div>
     </div>
   );
 }
@@ -182,6 +306,10 @@ function Demografia() {
     { value: "mujeres", label: "Mujeres" },
   ];
 
+  // Calcular urbano/rural
+  const urbanaCount = filteredData.area.Urbana ?? 0;
+  const urbanaPct = filteredData.total > 0 ? ((urbanaCount / filteredData.total) * 100).toFixed(1) : "0";
+
   return (
     <InsightPanelProvider value={DEMOGRAFIA_INSIGHTS}>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
@@ -194,37 +322,80 @@ function Demografia() {
         </p>
       </header>
 
+      {/* Tarjetas de resumen demográfico — siempre visibles */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <HeroBadge
+          value={`${urbanaPct}%`}
+          label="en zona urbana"
+          sublabel={`${urbanaCount.toLocaleString("es-EC")} casos en ciudades`}
+          color="primary"
+        />
+        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">35–44</div>
+          <div className="text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
+        </div>
+        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
+          <div className="mt-1 text-lg font-bold text-foreground leading-tight">Bachillerato</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Educación media</div>
+        </div>
+        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">Mestiza</div>
+          <div className="text-xs text-muted-foreground mt-0.5">~71,9% del total</div>
+        </div>
+      </div>
+
+      {/* Tarjeta de duración — siempre visible */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">⏱️ Duración del matrimonio antes del divorcio</h3>
+        <DurationContextCard filteredData={filteredData} />
+        <ContextNote icon="💡" variant="info">
+          El <span className="font-semibold">promedio nacional es ~15 años</span>. Los matrimonios cortos (menos de 5 años)
+          representan una minoría — la mayoría llega al divorcio tras al menos una década juntos.
+          Los casos de <span className="font-semibold">30+ años</span> son trayectorias muy largas que terminan
+          frecuentemente en etapa de madurez o vejez.
+        </ContextNote>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm text-muted-foreground">Mostrar:</span>
         <Chips value={selectedSexFocus} onChange={setSelectedSexFocus} options={sexoOpts} />
       </div>
 
-      <ChartCard
-        title="Edad al momento del divorcio"
-        description="Comparativo por rangos de edad · usa el filtro superior para cambiar."
-        height={380}
-      >
-        <Bar
-          data={{ labels: EDAD_ORDER.map((k) => EDAD_LABEL[k]), datasets: edadDatasets }}
-          options={{
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true } },
-            onClick: (_event, elements) => {
-              if (elements.length > 0) {
-                const idx = elements[0].index;
-                const clickedAge = EDAD_ORDER[idx];
-                setSelectedAge(selectedAge === clickedAge ? null : clickedAge);
-              }
-            },
-          }}
-        />
-      </ChartCard>
+      {/* Gráfico de edad + tarjeta contextual al seleccionar */}
+      <div className="space-y-3">
+        <AnimatePresence mode="wait">
+          {selectedAge && <EdadContextCard key={selectedAge} edad={selectedAge} />}
+        </AnimatePresence>
+        <ChartCard
+          title="Edad al momento del divorcio"
+          description="Clic en un rango de edad para ver el detalle interpretativo."
+          height={380}
+        >
+          <Bar
+            data={{ labels: EDAD_ORDER.map((k) => EDAD_LABEL[k]), datasets: edadDatasets }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true } },
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedAge = EDAD_ORDER[idx];
+                  setSelectedAge(selectedAge === clickedAge ? null : clickedAge);
+                }
+              },
+            }}
+          />
+        </ChartCard>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard
           title="Nivel educativo alcanzado"
-          description="Comparativo del nivel de instrucción."
+          description="Clic en un punto del radar para filtrar por educación."
           height={420}
         >
           <Radar
@@ -243,46 +414,62 @@ function Demografia() {
           />
         </ChartCard>
 
-        <ChartCard
-          title="Autoidentificación étnica"
-          description="Distribución declarada por las personas divorciadas."
-          height={420}
-        >
-          <Doughnut
-            data={{
-              labels: etnia.map(([k]) => k),
-              datasets: [
-                {
-                  data: etnia.map(([, v]) => v),
-                  backgroundColor: etnia.map(([k], i) => 
-                    selectedEthnicity 
-                      ? k === selectedEthnicity ? palette[i % palette.length] : palette[i % palette.length] + "44"
-                      : palette[i % palette.length]
-                  ),
-                  borderWidth: 0,
+        {/* Etnia + tarjeta contextual */}
+        <div className="space-y-3">
+          <AnimatePresence mode="wait">
+            {selectedEthnicity && <EtniaContextCard key={selectedEthnicity} etnia={selectedEthnicity} />}
+          </AnimatePresence>
+          <ChartCard
+            title="Autoidentificación étnica"
+            description="Clic en un segmento para ver su contexto dentro de la serie."
+            height={selectedEthnicity ? 350 : 420}
+          >
+            <Doughnut
+              data={{
+                labels: etnia.map(([k]) => k),
+                datasets: [
+                  {
+                    data: etnia.map(([, v]) => v),
+                    backgroundColor: etnia.map(([k], i) => 
+                      selectedEthnicity 
+                        ? k === selectedEthnicity ? palette[i % palette.length] : palette[i % palette.length] + "44"
+                        : palette[i % palette.length]
+                    ),
+                    borderWidth: 0,
+                  },
+                ],
+              }}
+              options={{ 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                cutout: "55%",
+                onClick: (_event, elements) => {
+                  if (elements.length > 0) {
+                    const idx = elements[0].index;
+                    const clickedEtnia = etnia[idx][0];
+                    setSelectedEthnicity(selectedEthnicity === clickedEtnia ? null : clickedEtnia);
+                  }
                 },
-              ],
-            }}
-            options={{ 
-              responsive: true, 
-              maintainAspectRatio: false, 
-              cutout: "55%",
-              onClick: (_event, elements) => {
-                if (elements.length > 0) {
-                  const idx = elements[0].index;
-                  const clickedEtnia = etnia[idx][0];
-                  setSelectedEthnicity(selectedEthnicity === clickedEtnia ? null : clickedEtnia);
-                }
-              },
-            }}
-          />
-        </ChartCard>
+              }}
+            />
+          </ChartCard>
+        </div>
       </div>
 
       <ChartCard
         title="Hijos en común procreados"
-        description="Número de hijos declarados por las parejas."
+        description="Número de hijos declarados por las parejas al momento del divorcio."
       >
+        {selectedChildren && (
+          <div className="mb-3 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground">
+            <span className="font-semibold">
+              {selectedChildren === "0" ? "Sin hijos" : `${selectedChildren} hijo${selectedChildren === "1" ? "" : "s"}`}:
+            </span>{" "}
+            {selectedChildren === "0"
+              ? "La mayoría de parejas no reporta hijos a cargo al momento del divorcio — pueden tramitar notarialmente."
+              : `Casos con ${selectedChildren} hijo${selectedChildren === "1" ? "" : "s"} a cargo. Con hijos menores de edad el trámite debe ser judicial.`}
+          </div>
+        )}
         <div className="flex flex-wrap gap-3 mb-4">
           <Chips
             value={escala}
@@ -336,6 +523,15 @@ function Demografia() {
           />
         </div>
       </ChartCard>
+
+      {/* Nota final de contexto */}
+      <ContextNote icon="📋" variant="info">
+        <span className="font-semibold">Área urbana vs. rural:</span> El{" "}
+        <span className="font-semibold">{urbanaPct}% de los divorcios</span> corresponde a residentes en zona urbana,
+        lo que refleja tanto la concentración poblacional en ciudades como el mayor acceso a trámites notariales y
+        judiciales en entornos urbanos. Los datos de etnia, educación y área corresponden a la declaración de
+        <span className="font-semibold"> cónyuge 1</span> en el registro INEC.
+      </ContextNote>
     </motion.div>
     </InsightPanelProvider>
   );
