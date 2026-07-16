@@ -11,6 +11,22 @@ import { HeroBadge } from "@/components/HeroBadge";
 import { LegalGlossary } from "@/components/LegalGlossary";
 import { ContextNote } from "@/components/ContextNote";
 
+/* ─── SVG Icons ─── */
+function IconScale({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 2a.75.75 0 01.75.75v.258a33.186 33.186 0 016.668.83.75.75 0 01-.336 1.461 31.28 31.28 0 00-1.103-.232l1.702 7.545a.75.75 0 01-.387.832A4.981 4.981 0 0115 14c-.825 0-1.606-.2-2.294-.556a.75.75 0 01-.387-.832l1.77-7.849a31.743 31.743 0 00-3.339-.254V15h2.25a.75.75 0 010 1.5h-6a.75.75 0 010-1.5H9.25V4.509a31.742 31.742 0 00-3.34.254l1.771 7.85a.75.75 0 01-.387.831A4.98 4.98 0 015 14a4.98 4.98 0 01-2.294-.556.75.75 0 01-.387-.832L4.02 5.067c-.37.07-.738.148-1.103.232A.75.75 0 012.25 3.84a33.19 33.19 0 016.668-.831V2.75A.75.75 0 0110 2z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconClock({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 export const Route = createFileRoute("/causas")({
   head: () => ({ meta: [{ title: "Causas y duración · Divorcios Ecuador 2020" }] }),
   component: Causas,
@@ -133,34 +149,46 @@ const CAUSE_INSIGHTS = {
   },
 } satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
 
-function CausaContextCard({ causa }: { causa: string }) {
+function CausaContextCard({ causa, count, total }: { causa: string; count: number; total: number }) {
   const row = DUR_PROMEDIO.find((r) => r.clave === causa);
   const corta = CAUSA_CORTA[causa] ?? causa;
   const detail = CAUSE_INSIGHTS.details[causa as keyof typeof CAUSE_INSIGHTS.details];
   if (!detail) return null;
+  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : "0";
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
-      className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5"
+      className="rounded-xl border border-primary/20 bg-primary/5 overflow-hidden"
     >
-      <div className="flex items-start gap-3">
-        <span className="text-lg shrink-0">⚖️</span>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-base font-semibold text-foreground">{corta}</span>
-            {row && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium border border-primary/20">
-                ⏱ {row.duracion} promedio
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-foreground leading-relaxed">
-            {detail.interpretiveText}
-          </p>
+      {/* Header — dato real del dataset */}
+      <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-b border-primary/10 bg-primary/8">
+        <div className="flex items-center gap-2.5">
+          <span className="text-primary shrink-0">
+            <IconScale className="w-4 h-4" />
+          </span>
+          <span className="text-sm font-semibold text-foreground">{corta}</span>
         </div>
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-sm font-bold text-foreground tabular-nums">
+            {count.toLocaleString("es-EC")} casos
+          </span>
+          <span className="text-xs text-muted-foreground">({pct}%)</span>
+          {row && (
+            <div className="flex items-center gap-1.5 text-xs text-primary font-medium bg-primary/10 border border-primary/20 rounded-full px-2.5 py-0.5">
+              <IconClock className="w-3 h-3" />
+              {row.duracion} prom.
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Body — descripción legal corta */}
+      <div className="px-4 py-3">
+        <p className="text-sm text-foreground leading-relaxed">
+          {detail.interpretiveText}
+        </p>
       </div>
     </motion.div>
   );
@@ -215,13 +243,16 @@ function DurationTable({ selectedCause }: { selectedCause: string | null }) {
 function Causas() {
   const [topN, setTopN] = useState(5);
   const [excluirSinInfo, setExcluirSinInfo] = useState(true);
-  const { filteredData, isLoading, selectedProvince, selectedCause, setSelectedCause, selectedDuration, setSelectedDuration } = useFilters();
+  const { filteredData, getAggregatesExcluding, isLoading, selectedProvince, selectedCause, setSelectedCause, selectedDuration, setSelectedDuration } = useFilters();
+
+  const aggCause = useMemo(() => getAggregatesExcluding(["cause"]), [getAggregatesExcluding]);
+  const aggDuration = useMemo(() => getAggregatesExcluding(["duration"]), [getAggregatesExcluding]);
 
   const causas = useMemo(() => {
-    if (!filteredData) return [];
-    const entries = Object.entries(filteredData.causa).sort((a, b) => b[1] - a[1]);
+    if (!aggCause) return [];
+    const entries = Object.entries(aggCause.causa).sort((a, b) => b[1] - a[1]);
     return excluirSinInfo ? entries.filter(([k]) => k !== "Sin Información") : entries;
-  }, [filteredData, excluirSinInfo]);
+  }, [aggCause, excluirSinInfo]);
 
   if (isLoading || !filteredData) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
@@ -236,7 +267,7 @@ function Causas() {
   const top = causas.slice(0, topN);
   const otros = causas.slice(topN).reduce((s, [, v]) => s + v, 0);
 
-  const durVals = DUR_ORDER.map((k) => filteredData.duracion[k] ?? 0);
+  const durVals = DUR_ORDER.map((k) => aggDuration?.duracion[k] ?? 0);
 
   return (
     <InsightPanelProvider value={CAUSE_INSIGHTS}>
@@ -285,7 +316,12 @@ function Causas() {
       {/* Tarjeta contextual de la causa seleccionada */}
       <AnimatePresence mode="wait">
         {selectedCause && (
-          <CausaContextCard key={selectedCause} causa={selectedCause} />
+          <CausaContextCard
+            key={selectedCause}
+            causa={selectedCause}
+            count={filteredData.causa[selectedCause] ?? 0}
+            total={filteredData.total}
+          />
         )}
       </AnimatePresence>
 
@@ -366,8 +402,8 @@ function Causas() {
       </div>
 
       {/* Gráfico duración + tabla de promedios */}
-      <div className="space-y-4">
-        <ContextNote icon="⏱️" title="Promedio nacional:" variant="info">
+      <div className="space-y-6">
+        <ContextNote title="Promedio nacional:" variant="info">
           Los matrimonios que se divorciaron en 2020 duraron en promedio{" "}
           <span className="font-semibold">15 años</span> antes de disolverse.
           La causal con matrimonios más cortos es{" "}
@@ -376,48 +412,46 @@ function Causas() {
           Clic en el gráfico o en la tabla para filtrar.
         </ContextNote>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <ChartCard title="Años transcurridos hasta el divorcio" description="Distribución por rango de duración del matrimonio." height={360}>
-            <Line
-              data={{
-                labels: DUR_ORDER.map((k) => DUR_LABELS[k]),
-                datasets: [
-                  {
-                    label: "Matrimonios disueltos",
-                    data: durVals,
-                    borderColor: palette[1],
-                    backgroundColor: palette[1] + "33",
-                    borderWidth: 2,
-                    pointBackgroundColor: DUR_ORDER.map(k => 
-                      selectedDuration 
-                        ? k === selectedDuration ? palette[1] : palette[1] + "44"
-                        : palette[1]
-                    ),
-                    pointRadius: DUR_ORDER.map(k => k === selectedDuration ? 6 : 4),
-                    fill: true,
-                    tension: 0.3,
-                  },
-                ],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true } },
-                onClick: (_event, elements) => {
-                  if (elements.length > 0) {
-                    const idx = elements[0].index;
-                    const clickedDur = DUR_ORDER[idx];
-                    setSelectedDuration(selectedDuration === clickedDur ? null : clickedDur);
-                  }
+        <ChartCard title="Años transcurridos hasta el divorcio" description="Distribución por rango de duración del matrimonio." height={360}>
+          <Line
+            data={{
+              labels: DUR_ORDER.map((k) => DUR_LABELS[k]),
+              datasets: [
+                {
+                  label: "Matrimonios disueltos",
+                  data: durVals,
+                  borderColor: palette[1],
+                  backgroundColor: palette[1] + "33",
+                  borderWidth: 2,
+                  pointBackgroundColor: DUR_ORDER.map(k => 
+                    selectedDuration 
+                      ? k === selectedDuration ? palette[1] : palette[1] + "44"
+                      : palette[1]
+                  ),
+                  pointRadius: DUR_ORDER.map(k => k === selectedDuration ? 6 : 4),
+                  fill: true,
+                  tension: 0.3,
                 },
-              }}
-            />
-          </ChartCard>
+              ],
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true } },
+              onClick: (_event, elements) => {
+                if (elements.length > 0) {
+                  const idx = elements[0].index;
+                  const clickedDur = DUR_ORDER[idx];
+                  setSelectedDuration(selectedDuration === clickedDur ? null : clickedDur);
+                }
+              },
+            }}
+          />
+        </ChartCard>
 
-          {/* Tabla de duración por causal — siempre visible */}
-          <DurationTable selectedCause={selectedCause} />
-        </div>
+        {/* Tabla de duración por causal — siempre visible */}
+        <DurationTable selectedCause={selectedCause} />
       </div>
     </motion.div>
     </InsightPanelProvider>

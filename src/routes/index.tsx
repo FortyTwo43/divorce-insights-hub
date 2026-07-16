@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { Bar, Doughnut } from "react-chartjs-2";
 import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
@@ -17,19 +18,19 @@ export const Route = createFileRoute("/")(  {
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 // Datos reales de casos por mes — pandemia 2020
-const DATOS_REALES: Record<string, { casos: number; nota: string; icono: string; tipo: "baja" | "rebote" | "normal" }> = {
-  Enero:   { casos: 888,   nota: "Inicio del año con ritmo normal.",                                         icono: "📅", tipo: "normal" },
-  Febrero: { casos: 818,   nota: "Mes corto, volumen estable previo a la pandemia.",                         icono: "📅", tipo: "normal" },
-  Marzo:   { casos: 399,   nota: "El 16 de marzo se declaró el Estado de Excepción (Decreto 1017). Al día siguiente se suspendieron todas las labores judiciales y notariales.", icono: "🔴", tipo: "baja" },
-  Abril:   { casos: 1,     nota: "Prácticamente paralizado: solo 1 divorcio inscrito en todo el mes. Cierre total de juzgados y notarías por cuarentena obligatoria.",           icono: "🔴", tipo: "baja" },
-  Mayo:    { casos: 18,    nota: "Solo 18 inscripciones. La Resolución 031-2020 del Consejo de la Judicatura suspendió términos procesales y la Resolución 057-2020 mantuvo las restricciones.", icono: "🔴", tipo: "baja" },
-  Junio:   { casos: 445,   nota: "Inicio de reactivación progresiva del sistema judicial.",                  icono: "🟡", tipo: "normal" },
-  Julio:   { casos: 748,   nota: "Recuperación parcial conforme se habilitan más juzgados.",                 icono: "📅", tipo: "normal" },
-  Agosto:  { casos: 1204,  nota: "Aceleración visible a medida que se procesan casos represados.",           icono: "📅", tipo: "normal" },
-  Septiembre: { casos: 1671, nota: "Máximo del año: absorbe el rezago acumulado durante el confinamiento. El sistema judicial procesa las solicitudes que no pudieron tramitarse entre abril y junio.", icono: "📈", tipo: "rebote" },
-  Octubre: { casos: 1385,  nota: "Volumen alto, todavía por encima del promedio normal.",                    icono: "📅", tipo: "normal" },
-  Noviembre:{ casos: 1099, nota: "Descenso gradual conforme se depura el rezago acumulado.",                 icono: "📅", tipo: "normal" },
-  Diciembre:{ casos: 652,  nota: "Fin de año con ritmo normalizado.",                                        icono: "📅", tipo: "normal" },
+const DATOS_REALES: Record<string, { casos: number; nota: string; tipo: "baja" | "rebote" | "normal" }> = {
+  Enero:      { casos: 888,   nota: "Inicio del año con ritmo normal.",                                         tipo: "normal" },
+  Febrero:    { casos: 818,   nota: "Mes corto, volumen estable previo a la pandemia.",                         tipo: "normal" },
+  Marzo:      { casos: 399,   nota: "El 16 de marzo se declaró el Estado de Excepción (Decreto 1017). Al día siguiente se suspendieron todas las labores judiciales y notariales.", tipo: "baja" },
+  Abril:      { casos: 1,     nota: "Prácticamente paralizado: solo 1 divorcio inscrito en todo el mes. Cierre total de juzgados y notarías por cuarentena obligatoria.", tipo: "baja" },
+  Mayo:       { casos: 18,    nota: "Solo 18 inscripciones. La Resolución 031-2020 del Consejo de la Judicatura suspendió términos procesales y la Resolución 057-2020 mantuvo las restricciones.", tipo: "baja" },
+  Junio:      { casos: 445,   nota: "Inicio de reactivación progresiva del sistema judicial.",                  tipo: "normal" },
+  Julio:      { casos: 748,   nota: "Recuperación parcial conforme se habilitan más juzgados.",                 tipo: "normal" },
+  Agosto:     { casos: 1204,  nota: "Aceleración visible a medida que se procesan casos represados.",           tipo: "normal" },
+  Septiembre: { casos: 1671,  nota: "Máximo del año: absorbe el rezago acumulado durante el confinamiento. El sistema judicial procesa las solicitudes que no pudieron tramitarse entre abril y junio.", tipo: "rebote" },
+  Octubre:    { casos: 1385,  nota: "Volumen alto, todavía por encima del promedio normal.",                    tipo: "normal" },
+  Noviembre:  { casos: 1099,  nota: "Descenso gradual conforme se depura el rezago acumulado.",                 tipo: "normal" },
+  Diciembre:  { casos: 652,   nota: "Fin de año con ritmo normalizado.",                                        tipo: "normal" },
 };
 
 const INDEX_INSIGHTS = {
@@ -75,42 +76,76 @@ const INDEX_INSIGHTS = {
 
 const PANDEMIA_MESES = new Set(["Marzo", "Abril", "Mayo"]);
 
-function MonthContextCard({ month }: { month: string }) {
+/* ───────────── Icon SVG components (no emojis) ───────────── */
+function IconCalendar({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M5.75 2a.75.75 0 01.75.75V4h7V2.75a.75.75 0 011.5 0V4h.25A2.75 2.75 0 0118 6.75v8.5A2.75 2.75 0 0115.25 18H4.75A2.75 2.75 0 012 15.25v-8.5A2.75 2.75 0 014.75 4H5V2.75A.75.75 0 015.75 2zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconAlert({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconTrend({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function getMonthIcon(tipo: "baja" | "rebote" | "normal") {
+  if (tipo === "baja") return <IconAlert className="w-5 h-5" />;
+  if (tipo === "rebote") return <IconTrend className="w-5 h-5" />;
+  return <IconCalendar className="w-5 h-5" />;
+}
+
+function MonthContextCard({ month, count }: { month: string; count: number }) {
   const info = DATOS_REALES[month];
   if (!info) return null;
   const colorMap = {
-    baja: "bg-rose-50 border-rose-200",
-    rebote: "bg-emerald-50 border-emerald-200",
-    normal: "bg-secondary/40 border-border",
+    baja: { card: "bg-rose-50 border-rose-200", icon: "text-rose-600", num: "text-rose-700", txt: "text-rose-800" },
+    rebote: { card: "bg-emerald-50 border-emerald-200", icon: "text-emerald-600", num: "text-emerald-700", txt: "text-emerald-800" },
+    normal: { card: "bg-card border-border", icon: "text-primary", num: "text-foreground", txt: "text-muted-foreground" },
   };
-  const textMap = {
-    baja: "text-rose-800",
-    rebote: "text-emerald-800",
-    normal: "text-foreground",
-  };
+  const c = colorMap[info.tipo];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
-      className={`rounded-xl border px-4 py-3.5 ${colorMap[info.tipo]}`}
+      className={`rounded-xl border overflow-hidden ${c.card}`}
     >
-      <div className="flex items-start gap-3">
-        <span className="text-xl shrink-0 leading-6">{info.icono}</span>
-        <div>
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className={`text-2xl font-bold tabular-nums ${textMap[info.tipo]}`}>
-              {info.casos.toLocaleString("es-EC")}
-            </span>
-            <span className="text-sm font-semibold text-muted-foreground">
-              divorcios en {month} de 2020
-            </span>
-          </div>
-          <p className={`mt-1.5 text-sm leading-relaxed ${textMap[info.tipo]}`}>
-            {info.nota}
-          </p>
+      {/* Header — datos del dataset */}
+      <div className={`flex items-center gap-3 px-4 py-3 border-b ${
+        info.tipo === "baja" ? "border-rose-200 bg-rose-100/50"
+        : info.tipo === "rebote" ? "border-emerald-200 bg-emerald-100/50"
+        : "border-border bg-secondary/30"
+      }`}>
+        <div className={`shrink-0 ${c.icon}`}>
+          {getMonthIcon(info.tipo)}
         </div>
+        <div className="flex items-baseline gap-2.5 flex-wrap">
+          <span className={`text-2xl font-bold tabular-nums leading-none ${c.num}`}>
+            {count.toLocaleString("es-EC")}
+          </span>
+          <span className="text-sm font-semibold text-muted-foreground">
+            divorcios en {month} de 2020
+          </span>
+        </div>
+      </div>
+      {/* Body — nota contextual corta */}
+      <div className="px-4 py-3">
+        <p className={`text-sm leading-relaxed ${c.txt}`}>
+          {info.nota}
+        </p>
       </div>
     </motion.div>
   );
@@ -132,21 +167,30 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
 }
 
 function Resumen() {
-  const { filteredData, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton, selectedMonth, setSelectedMonth } = useFilters();
+  const { filteredData, getAggregatesExcluding, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton, selectedMonth, setSelectedMonth } = useFilters();
 
-  if (isLoading || !filteredData) {
+  const aggSinMes = useMemo(() => getAggregatesExcluding(["month"]), [getAggregatesExcluding]);
+  const aggGeo = useMemo(() => {
+    return selectedProvince ? getAggregatesExcluding(["canton"]) : getAggregatesExcluding(["province"]);
+  }, [getAggregatesExcluding, selectedProvince]);
+
+  if (isLoading || !filteredData || !aggSinMes || !aggGeo) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
   }
 
-  const mesData = MESES.map((m) => filteredData.mes[m] ?? 0);
-  const topProvObj = selectedProvince ? filteredData.canton : filteredData.provincia;
+  // Datos del dataset por mes — ignora el filtro de mes para que el gráfico no se vacíe al seleccionar uno
+  const mesData = MESES.map((m) => aggSinMes.mes[m] ?? 0);
+
+  // Top 8 provincias o cantones — ignora el filtro respectivo
+  const topProvObj = selectedProvince ? aggGeo.canton : aggGeo.provincia;
   const topProv = Object.entries(topProvObj).sort((a,b) => b[1] - a[1]).slice(0, 8);
-  const areaLabels = Object.keys(filteredData.area);
-  const areaVals = Object.values(filteredData.area);
 
-  const urbanoPct = filteredData.total > 0 ? ((filteredData.area.Urbana / filteredData.total) * 100).toFixed(1) : "0";
+  // Urbano/Rural — orden fijo: siempre Urbana primero, Rural segundo
+  const urbanaCount = filteredData.area["Urbana"] ?? 0;
+  const ruralCount = filteredData.area["Rural"] ?? 0;
+  const urbanoPct = filteredData.total > 0 ? ((urbanaCount / filteredData.total) * 100).toFixed(1) : "0";
 
-  const showPandemiaNote = !selectedMonth || PANDEMIA_MESES.has(selectedMonth);
+  const showPandemiaNote = !selectedMonth;
 
   return (
     <InsightPanelProvider value={INDEX_INSIGHTS}>
@@ -165,7 +209,7 @@ function Resumen() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Total de divorcios" value={<AnimatedNumber value={filteredData.total} />} sub="Registrados en 2020" />
-        <Stat label="Zona urbana" value={`${urbanoPct}%`} sub={`${(filteredData.area.Urbana || 0).toLocaleString("es-EC")} casos`} />
+        <Stat label="Zona urbana" value={`${urbanoPct}%`} sub={`${urbanaCount.toLocaleString("es-EC")} casos`} />
         <Stat label="Vía notarial" value={<AnimatedNumber value={filteredData.causa["Por mutuo consentimiento vía notarial"] || 0} />} sub="Mutuo acuerdo" />
         <Stat label="Líder (por total)" value={topProv.length > 0 ? topProv[0][0] : "-"} sub={topProv.length > 0 ? `${topProv[0][1].toLocaleString("es-EC")} divorcios` : ""} />
       </div>
@@ -175,7 +219,7 @@ function Resumen() {
         <div className="space-y-3">
           {/* Nota del decreto — siempre visible encima del gráfico */}
           {showPandemiaNote && (
-            <ContextNote icon="🏛️" title="Impacto del Decreto 1017 (16 marzo 2020):">
+            <ContextNote title="Impacto del Decreto 1017 (16 marzo 2020):" variant="warning">
               El Presidente declaró Estado de Excepción por la pandemia. Al día siguiente se suspendieron todas las labores judiciales y notariales.{" "}
               <span className="font-semibold">Resolución 031-2020</span> del Consejo de la Judicatura suspendió términos procesales.{" "}
               <span className="font-semibold">Resolución 057-2020</span> extendió las restricciones hasta junio.
@@ -185,16 +229,20 @@ function Resumen() {
             </ContextNote>
           )}
 
-          {/* Tarjeta contextual del mes seleccionado */}
+          {/* Tarjeta contextual del mes seleccionado — número del dataset + nota editorial */}
           <AnimatePresence mode="wait">
             {selectedMonth && (
-              <MonthContextCard key={selectedMonth} month={selectedMonth} />
+              <MonthContextCard
+                key={selectedMonth}
+                month={selectedMonth}
+                count={filteredData.mes[selectedMonth] ?? 0}
+              />
             )}
           </AnimatePresence>
 
           <ChartCard 
             title="Ritmo mensual de inscripciones" 
-            description={selectedMonth ? `Filtrado por ${selectedMonth} · Clic para deseleccionar` : "Clic en un mes para ver el contexto completo."}
+            description={selectedMonth ? `${selectedMonth} seleccionado · Clic para deseleccionar` : "Clic en un mes para ver su dato y contexto."}
           >
             <Bar
               data={{
@@ -242,12 +290,14 @@ function Resumen() {
           )}
         </div>
 
+        {/* Gráfico donut Urbana/Rural — orden fijo para que los colores no cambien */}
         <ChartCard title="Entorno de residencia" description="Distribución entre zonas urbanas y rurales.">
           <Doughnut
+            key="area-donut"
             data={{
-              labels: areaLabels,
+              labels: ["Urbana", "Rural"],
               datasets: [{
-                data: areaVals,
+                data: [urbanaCount, ruralCount],
                 backgroundColor: [palette[0], palette[1]],
                 borderWidth: 0,
               }],
@@ -272,7 +322,7 @@ function Resumen() {
                   backgroundColor: topProv.map(([k]) => 
                     selectedProvince 
                       ? (selectedCanton && k !== selectedCanton ? palette[2] + "44" : palette[2]) 
-                      : (selectedProvince === k ? palette[2] : palette[2])
+                      : palette[2]
                   ),
                   borderRadius: 6,
                 }],
@@ -297,7 +347,7 @@ function Resumen() {
             />
           </ChartCard>
           {!selectedProvince && (
-            <ContextNote icon="📍" variant="info">
+            <ContextNote variant="info">
               <span className="font-semibold">Guayas y Pichincha</span> lideran por{" "}
               <span className="font-semibold">concentración poblacional</span>, no por mayor tasa de divorcio.
               Son las dos provincias más habitadas del Ecuador. El mismo patrón ocurre en cualquier trámite civil.
@@ -307,6 +357,7 @@ function Resumen() {
 
         <ChartCard title="Régimen de bienes" description="Parejas con o sin capitulaciones matrimoniales.">
           <Doughnut
+            key="capitulaciones-donut"
             data={{
               labels: Object.keys(filteredData.capitulaciones),
               datasets: [{

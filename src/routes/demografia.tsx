@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Bar, Radar, Doughnut } from "react-chartjs-2";
 import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
@@ -122,6 +122,43 @@ const DEMOGRAFIA_INSIGHTS = {
 
 type Escala = "lineal" | "log";
 
+/* ─── SVG Icons ─── */
+function IconUser({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+    </svg>
+  );
+}
+function IconPin({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.757.433l.018.008.006.003zM10 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconDna({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M6.28 5.22a.75.75 0 010 1.06L2.56 10l3.72 3.72a.75.75 0 01-1.06 1.06L1.5 10.53a.75.75 0 010-1.06l3.72-3.72a.75.75 0 011.06 0zm7.44 0a.75.75 0 011.06 0l3.72 3.72a.75.75 0 010 1.06l-3.72 3.72a.75.75 0 11-1.06-1.06L17.44 10l-3.72-3.72a.75.75 0 010-1.06zM11.377 2.011a.75.75 0 01.612.867l-2.5 14.5a.75.75 0 01-1.478-.255l2.5-14.5a.75.75 0 01.866-.612z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconInfo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconClock({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 function Chips<T extends string>({
   value,
   onChange,
@@ -150,48 +187,91 @@ function Chips<T extends string>({
   );
 }
 
-function EdadContextCard({ edad }: { edad: string }) {
+/* ─── Tarjeta de detalle de edad — número del dataset + descripción corta ─── */
+function EdadContextCard({ edad, countH, countM }: { edad: string; countH: number; countM: number }) {
   const d = EDAD_DETALLE[edad];
   if (!d) return null;
+  const total = countH + countM;
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
-      className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5 space-y-1.5"
+      className="rounded-xl border border-primary/20 bg-primary/5 overflow-hidden"
     >
-      <div className="flex items-center gap-2">
-        <span className="text-lg">👤</span>
-        <span className="text-base font-semibold text-foreground">{d.titulo}</span>
-      </div>
-      <p className="text-sm text-foreground leading-relaxed">{d.interpretacion}</p>
-      {d.dato && (
-        <div className="flex items-start gap-2 rounded-lg bg-background/80 border border-border px-3 py-2">
-          <span className="text-xs mt-0.5">📌</span>
-          <p className="text-xs text-muted-foreground">{d.dato}</p>
+      {/* Header — dato real del dataset */}
+      <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-primary/10 bg-primary/8">
+        <div className="flex items-center gap-2.5">
+          <span className="text-primary shrink-0">
+            <IconUser className="w-4 h-4" />
+          </span>
+          <span className="text-sm font-semibold text-foreground">{d.titulo}</span>
         </div>
-      )}
+        <div className="flex items-center gap-3 shrink-0">
+          {countH > 0 && (
+            <span className="text-xs font-semibold tabular-nums" style={{ color: palette[0] }}>
+              H: {countH.toLocaleString("es-EC")}
+            </span>
+          )}
+          {countM > 0 && (
+            <span className="text-xs font-semibold tabular-nums" style={{ color: palette[1] }}>
+              M: {countM.toLocaleString("es-EC")}
+            </span>
+          )}
+          <span className="text-sm font-bold text-foreground tabular-nums">
+            {total.toLocaleString("es-EC")} casos
+          </span>
+        </div>
+      </div>
+      {/* Body — layout horizontal */}
+      <div className="flex gap-0 divide-x divide-primary/10">
+        <div className="flex-1 px-4 py-3">
+          <p className="text-sm text-foreground leading-relaxed">{d.interpretacion}</p>
+        </div>
+        {d.dato && (
+          <div className="w-56 shrink-0 px-4 py-3 flex items-start gap-2 bg-background/60">
+            <span className="text-primary shrink-0 mt-0.5">
+              <IconPin className="w-3.5 h-3.5" />
+            </span>
+            <p className="text-xs text-muted-foreground leading-relaxed">{d.dato}</p>
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
 
-function EtniaContextCard({ etnia }: { etnia: string }) {
+/* ─── Tarjeta de detalle de etnia — número del dataset + descripción corta ─── */
+function EtniaContextCard({ etnia, count, total }: { etnia: string; count: number; total: number }) {
   const texto = ETNIA_DETALLE[etnia] ?? `Autoidentificación: ${etnia}.`;
+  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : "0";
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       transition={{ duration: 0.25 }}
-      className="rounded-xl border border-accent/20 bg-accent/5 px-4 py-3"
+      className="rounded-xl border border-accent/20 bg-accent/5 overflow-hidden"
     >
-      <div className="flex items-start gap-3">
-        <span className="text-lg shrink-0">🧬</span>
-        <div>
-          <span className="text-sm font-semibold text-foreground">{etnia}:</span>{" "}
-          <span className="text-sm text-foreground leading-relaxed">{texto}</span>
+      {/* Header — dato real del dataset */}
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-accent/10 bg-accent/8">
+        <div className="flex items-center gap-2.5">
+          <span className="text-accent shrink-0">
+            <IconDna className="w-4 h-4" />
+          </span>
+          <span className="text-sm font-semibold text-foreground">{etnia}</span>
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-sm font-bold text-foreground tabular-nums">
+            {count.toLocaleString("es-EC")} casos
+          </span>
+          <span className="text-xs text-muted-foreground tabular-nums">({pct}%)</span>
+        </div>
+      </div>
+      {/* Body — descripción corta */}
+      <div className="px-4 py-3">
+        <p className="text-sm text-foreground leading-relaxed">{texto}</p>
       </div>
     </motion.div>
   );
@@ -226,12 +306,42 @@ function DurationContextCard({ filteredData }: { filteredData: NonNullable<Retur
   );
 }
 
+/* ─── Tarjeta de hijos — diseño mejorado ─── */
+function HijosContextCard({ children: count }: { children: string }) {
+  const essinHijos = count === "0";
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-xl border border-border bg-secondary/30 overflow-hidden"
+    >
+      <div className="flex items-start gap-4 px-4 py-3.5">
+        <span className="text-primary shrink-0 mt-0.5">
+          <IconInfo className="w-4 h-4" />
+        </span>
+        <div>
+          <span className="text-sm font-semibold text-foreground">
+            {essinHijos ? "Sin hijos" : `${count} hijo${count === "1" ? "" : "s"}`}:
+          </span>{" "}
+          <span className="text-sm text-muted-foreground">
+            {essinHijos
+              ? "La mayoría de parejas no reporta hijos a cargo al momento del divorcio — pueden tramitar notarialmente."
+              : `Casos con ${count} hijo${count === "1" ? "" : "s"} a cargo. Con hijos menores de edad el trámite debe ser judicial.`}
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 function Demografia() {
   const [escala, setEscala] = useState<Escala>("log");
   const [incluirSinHijos, setIncluirSinHijos] = useState(true);
   
   const { 
-    filteredData, isLoading, selectedProvince, 
+    filteredData, getAggregatesExcluding, isLoading, selectedProvince, 
     selectedSexFocus, setSelectedSexFocus,
     selectedAge, setSelectedAge,
     selectedEdu, setSelectedEdu,
@@ -239,14 +349,19 @@ function Demografia() {
     selectedChildren, setSelectedChildren
   } = useFilters();
 
-  if (isLoading || !filteredData) {
+  const aggAge = useMemo(() => getAggregatesExcluding(["age"]), [getAggregatesExcluding]);
+  const aggEdu = useMemo(() => getAggregatesExcluding(["edu"]), [getAggregatesExcluding]);
+  const aggEtnia = useMemo(() => getAggregatesExcluding(["ethnicity"]), [getAggregatesExcluding]);
+  const aggHijos = useMemo(() => getAggregatesExcluding(["children"]), [getAggregatesExcluding]);
+
+  if (isLoading || !filteredData || !aggAge || !aggEdu || !aggEtnia || !aggHijos) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
   }
 
-  const edadH = EDAD_ORDER.map((k) => filteredData.edad_h[k] ?? 0);
-  const edadM = EDAD_ORDER.map((k) => filteredData.edad_m[k] ?? 0);
-  const nivelH = NIVEL_ORDER.map((k) => filteredData.nivel_h[k] ?? 0);
-  const nivelM = NIVEL_ORDER.map((k) => filteredData.nivel_m[k] ?? 0);
+  const edadH = EDAD_ORDER.map((k) => aggAge.edad_h[k] ?? 0);
+  const edadM = EDAD_ORDER.map((k) => aggAge.edad_m[k] ?? 0);
+  const nivelH = NIVEL_ORDER.map((k) => aggEdu.nivel_h[k] ?? 0);
+  const nivelM = NIVEL_ORDER.map((k) => aggEdu.nivel_m[k] ?? 0);
 
   const isSexHombres = selectedSexFocus !== "mujeres";
   const isSexMujeres = selectedSexFocus !== "hombres";
@@ -293,9 +408,9 @@ function Demografia() {
     },
   ].filter(Boolean) as never[];
 
-  const etnia = Object.entries(filteredData.etnia).sort((a, b) => b[1] - a[1]);
+  const etnia = Object.entries(aggEtnia.etnia).sort((a, b) => b[1] - a[1]);
 
-  const hijosOrdered = Object.entries(filteredData.hijos)
+  const hijosOrdered = Object.entries(aggHijos.hijos)
     .filter(([k]) => k !== "99")
     .filter(([k]) => incluirSinHijos || k !== "0")
     .sort((a, b) => Number(a[0]) - Number(b[0]));
@@ -306,8 +421,9 @@ function Demografia() {
     { value: "mujeres", label: "Mujeres" },
   ];
 
-  // Calcular urbano/rural
-  const urbanaCount = filteredData.area.Urbana ?? 0;
+  // Urbano/Rural — orden fijo para que los colores no cambien
+  const urbanaCount = filteredData.area["Urbana"] ?? 0;
+  const ruralCount = filteredData.area["Rural"] ?? 0;
   const urbanaPct = filteredData.total > 0 ? ((urbanaCount / filteredData.total) * 100).toFixed(1) : "0";
 
   return (
@@ -349,9 +465,12 @@ function Demografia() {
 
       {/* Tarjeta de duración — siempre visible */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">⏱️ Duración del matrimonio antes del divorcio</h3>
+        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          <span className="text-primary"><IconClock className="w-4 h-4" /></span>
+          Duración del matrimonio antes del divorcio
+        </div>
         <DurationContextCard filteredData={filteredData} />
-        <ContextNote icon="💡" variant="info">
+        <ContextNote variant="info">
           El <span className="font-semibold">promedio nacional es ~15 años</span>. Los matrimonios cortos (menos de 5 años)
           representan una minoría — la mayoría llega al divorcio tras al menos una década juntos.
           Los casos de <span className="font-semibold">30+ años</span> son trayectorias muy largas que terminan
@@ -367,7 +486,14 @@ function Demografia() {
       {/* Gráfico de edad + tarjeta contextual al seleccionar */}
       <div className="space-y-3">
         <AnimatePresence mode="wait">
-          {selectedAge && <EdadContextCard key={selectedAge} edad={selectedAge} />}
+          {selectedAge && (
+            <EdadContextCard
+              key={selectedAge}
+              edad={selectedAge}
+              countH={filteredData.edad_h[selectedAge] ?? 0}
+              countM={filteredData.edad_m[selectedAge] ?? 0}
+            />
+          )}
         </AnimatePresence>
         <ChartCard
           title="Edad al momento del divorcio"
@@ -417,7 +543,14 @@ function Demografia() {
         {/* Etnia + tarjeta contextual */}
         <div className="space-y-3">
           <AnimatePresence mode="wait">
-            {selectedEthnicity && <EtniaContextCard key={selectedEthnicity} etnia={selectedEthnicity} />}
+            {selectedEthnicity && (
+              <EtniaContextCard
+                key={selectedEthnicity}
+                etnia={selectedEthnicity}
+                count={filteredData.etnia[selectedEthnicity] ?? 0}
+                total={filteredData.total}
+              />
+            )}
           </AnimatePresence>
           <ChartCard
             title="Autoidentificación étnica"
@@ -456,21 +589,34 @@ function Demografia() {
         </div>
       </div>
 
+      {/* Gráfico de zona urbana/rural — orden fijo para que los colores no cambien */}
+      <ChartCard title="Entorno de residencia" description="Distribución entre zonas urbanas y rurales.">
+        <Doughnut
+          key="area-demo-donut"
+          data={{
+            labels: ["Urbana", "Rural"],
+            datasets: [
+              {
+                data: [urbanaCount, ruralCount],
+                backgroundColor: [palette[0], palette[1]],
+                borderWidth: 0,
+              },
+            ],
+          }}
+          options={{ responsive: true, maintainAspectRatio: false, cutout: "60%" }}
+        />
+      </ChartCard>
+
       <ChartCard
         title="Hijos en común procreados"
         description="Número de hijos declarados por las parejas al momento del divorcio."
       >
-        {selectedChildren && (
-          <div className="mb-3 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-sm text-foreground">
-            <span className="font-semibold">
-              {selectedChildren === "0" ? "Sin hijos" : `${selectedChildren} hijo${selectedChildren === "1" ? "" : "s"}`}:
-            </span>{" "}
-            {selectedChildren === "0"
-              ? "La mayoría de parejas no reporta hijos a cargo al momento del divorcio — pueden tramitar notarialmente."
-              : `Casos con ${selectedChildren} hijo${selectedChildren === "1" ? "" : "s"} a cargo. Con hijos menores de edad el trámite debe ser judicial.`}
-          </div>
-        )}
-        <div className="flex flex-wrap gap-3 mb-4">
+        <AnimatePresence mode="wait">
+          {selectedChildren && (
+            <HijosContextCard key={selectedChildren}>{selectedChildren}</HijosContextCard>
+          )}
+        </AnimatePresence>
+        <div className="flex flex-wrap gap-3 mb-4 mt-3">
           <Chips
             value={escala}
             onChange={setEscala}
@@ -525,7 +671,7 @@ function Demografia() {
       </ChartCard>
 
       {/* Nota final de contexto */}
-      <ContextNote icon="📋" variant="info">
+      <ContextNote variant="info">
         <span className="font-semibold">Área urbana vs. rural:</span> El{" "}
         <span className="font-semibold">{urbanaPct}% de los divorcios</span> corresponde a residentes en zona urbana,
         lo que refleja tanto la concentración poblacional en ciudades como el mayor acceso a trámites notariales y
