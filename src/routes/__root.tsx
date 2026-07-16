@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { FilterProvider } from "../contexts/FilterContext";
 import { useFilters } from "../contexts/FilterContext";
+import { DetailPanel } from "@/components/DetailPanel";
 
 function NotFoundComponent() {
   return (
@@ -192,8 +193,13 @@ function RootComponent() {
       <FilterProvider>
         <div className="min-h-screen flex flex-col">
           <Header />
-          <main className="flex-1 mx-auto max-w-6xl w-full px-6 py-10">
-            <Outlet />
+          <main className="flex-1 mx-auto max-w-7xl w-full px-6 py-10">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start">
+              <div className="min-w-0">
+                <Outlet />
+              </div>
+              <DetailPanel />
+            </div>
           </main>
           <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
             Datos: Registro Estadístico de Matrimonios y Divorcios · INEC 2020

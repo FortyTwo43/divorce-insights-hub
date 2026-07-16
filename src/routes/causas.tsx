@@ -6,6 +6,7 @@ import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters } from "@/contexts/FilterContext";
+import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
 
 export const Route = createFileRoute("/causas")({
   head: () => ({ meta: [{ title: "Causas y duración · Divorcios Ecuador 2020" }] }),
@@ -37,6 +38,82 @@ const DUR_LABELS: Record<string, string> = {
   "30+": "Más de 30 años",
 };
 
+const CAUSE_INSIGHTS = {
+  priority: ["cause", "duration"],
+  overviewText:
+    "Más del 71% de los divorcios de 2020 fueron por mutuo consentimiento, lo que sugiere que la mayoría de separaciones se resolvieron de forma acordada, incluso durante la pandemia.",
+  details: {
+    "Por mutuo consentimiento vía judicial": {
+      label: "Mutuo consentimiento vía judicial",
+      interpretiveText:
+        "Divorcio acordado por ambos cónyuges, tramitado ante un juez cuando hay hijos menores de edad o bienes en disputa.",
+      avgDuration: "13,6 años",
+    },
+    "Por mutuo consentimiento vía notarial": {
+      label: "Mutuo consentimiento vía notarial",
+      interpretiveText:
+        "Divorcio acordado por ambos cónyuges, sin hijos menores de edad, tramitado directamente en una notaría.",
+      avgDuration: "15,4 años",
+    },
+    "El abandono injustificado de cualquiera de los cónyuges por más de seis meses ininterrumpidos": {
+      label: "Abandono injustificado",
+      interpretiveText:
+        "Causal unilateral: uno de los cónyuges demanda porque el otro abandonó el hogar sin justificación por más de seis meses seguidos.",
+      avgDuration: "16,6 años",
+    },
+    "El estado habitual de falta de armonía de las dos voluntades en la vida matrimonial": {
+      label: "Falta de armonía",
+      interpretiveText:
+        "Causal por incompatibilidad de caracteres o convivencia insostenible, sin una falta grave específica.",
+      avgDuration: "14,4 años",
+    },
+    "Los tratos crueles o violencia contra la mujer o miembros del núcleo familiar": {
+      label: "Violencia intrafamiliar",
+      interpretiveText: "Causal directamente vinculada a violencia intrafamiliar.",
+      avgDuration: "15,0 años",
+    },
+    "Las Amenazas graves de un cónyuge contra la vida del otro": {
+      label: "Amenazas graves",
+      interpretiveText: "Causal por amenazas graves contra la vida del otro cónyuge.",
+      avgDuration: "16,0 años",
+    },
+    "La condena ejecutoriada a pena privativa de la libertad mayor a diez años": {
+      label: "Condena penal >10 años",
+      interpretiveText: "Causal por condena ejecutoriada a pena privativa de la libertad mayor a diez años.",
+      avgDuration: "18,6 años",
+    },
+    "El adulterio de uno de los cónyuges": {
+      label: "Adulterio",
+      interpretiveText: "Causal por adulterio de uno de los cónyuges.",
+      avgDuration: "14,3 años",
+    },
+    "La tentativa de uno de los cónyuges contra la vida del otro": {
+      label: "Tentativa contra la vida",
+      interpretiveText: "Causal por tentativa de uno de los cónyuges contra la vida del otro.",
+    },
+    "Los actos ejecutados por uno de los cónyuges con el fin de involucrar al otro o a los hijos en actividades ilícitas": {
+      label: "Actividades ilícitas",
+      interpretiveText: "Causal por actos para involucrar al otro o a los hijos en actividades ilícitas.",
+      avgDuration: "29,0 años",
+    },
+    "El que uno de los cónyuges sea ebrio consuetudinario o toxicómano": {
+      label: "Alcoholismo / drogas",
+      interpretiveText: "Causal por ebriedad consuetudinaria o toxicomanía.",
+      avgDuration: "16,6 años",
+    },
+    "Sin Información": {
+      label: "Sin información",
+      interpretiveText: "Registro sin causal declarada.",
+    },
+    "<1": { label: "Menos de 1 año", interpretiveText: "Matrimonios disueltos con menos de un año de duración." },
+    "1-5": { label: "1 a 5 años", interpretiveText: "Separaciones tempranas dentro de la trayectoria matrimonial." },
+    "6-10": { label: "6 a 10 años", interpretiveText: "Duración intermedia, ya lejos del arranque del matrimonio." },
+    "11-20": { label: "11 a 20 años", interpretiveText: "Tramo de matrimonios ya consolidados antes de la disolución." },
+    "21-30": { label: "21 a 30 años", interpretiveText: "Matrimonios de larga duración al momento del divorcio." },
+    "30+": { label: "Más de 30 años", interpretiveText: "Casos de trayectorias matrimoniales muy largas." },
+  },
+} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
+
 function Causas() {
   const [topN, setTopN] = useState(5);
   const [excluirSinInfo, setExcluirSinInfo] = useState(true);
@@ -58,7 +135,8 @@ function Causas() {
   const durVals = DUR_ORDER.map((k) => filteredData.duracion[k] ?? 0);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <InsightPanelProvider value={CAUSE_INSIGHTS}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
           {selectedProvince ? `Causas y duración en ${selectedProvince}` : "Causas del divorcio y duración del matrimonio"}
@@ -201,5 +279,6 @@ function Causas() {
         />
       </ChartCard>
     </motion.div>
+    </InsightPanelProvider>
   );
 }

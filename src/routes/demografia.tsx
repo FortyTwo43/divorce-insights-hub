@@ -6,6 +6,7 @@ import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters, SexFocus } from "@/contexts/FilterContext";
+import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
 
 export const Route = createFileRoute("/demografia")({
   head: () => ({ meta: [{ title: "Demografía · Divorcios Ecuador 2020" }] }),
@@ -34,6 +35,42 @@ const NIVEL_ORDER = [
   "Superior Universitario",
   "Posgrado",
 ];
+
+const DEMOGRAFIA_INSIGHTS = {
+  priority: ["age", "education", "ethnicity", "children"],
+  overviewText:
+    "La estructura demográfica se concentra en edades medias, educación media/bachillerato, residencia urbana y autoidentificación mestiza. El panel permite revisar cada dimensión sin perder el contexto general.",
+  details: {
+    "<25": { label: "Menos de 25", interpretiveText: "Rango muy temprano dentro de la trayectoria marital." },
+    "25-34": { label: "25 a 34", interpretiveText: "Edad de divorcio relativamente temprana dentro de la serie." },
+    "35-44": { label: "35 a 44", interpretiveText: "Tramo central de la distribución por edad." },
+    "45-54": { label: "45 a 54", interpretiveText: "Edad madura, todavía muy representada en la serie." },
+    "55-64": { label: "55 a 64", interpretiveText: "Grupo de trayectorias matrimoniales más largas." },
+    "65+": { label: "65 o más", interpretiveText: "Casos menos frecuentes pero aún presentes en la distribución." },
+    Ninguno: { label: "Sin nivel educativo", interpretiveText: "Casos sin nivel educativo declarado." },
+    Primaria: { label: "Primaria", interpretiveText: "Nivel básico con peso relevante en la serie." },
+    "Educación básica": { label: "Educación básica", interpretiveText: "Nivel intermedio de instrucción." },
+    Secundaria: { label: "Secundaria", interpretiveText: "Tramo importante dentro del perfil educativo." },
+    "Educación media / Bachillerato": { label: "Bachillerato", interpretiveText: "Nivel más frecuente en la serie." },
+    "Superior no Universitario": { label: "Superior no universitario", interpretiveText: "Formación técnica o terciaria no universitaria." },
+    "Superior Universitario": { label: "Superior universitario", interpretiveText: "Nivel universitario con presencia alta en la serie." },
+    Posgrado: { label: "Posgrado", interpretiveText: "Nivel de posgrado, menos frecuente pero visible." },
+    Indigena: { label: "Indígena", interpretiveText: "Autoidentificación minoritaria dentro del total nacional." },
+    Mestiza: { label: "Mestiza", interpretiveText: "Categoría dominante, consistente con la composición del país." },
+    Montubia: { label: "Montubia", interpretiveText: "Presencia menor, pero relevante en el registro." },
+    Blanca: { label: "Blanca", interpretiveText: "Grupo minoritario dentro del conjunto." },
+    Mulata: { label: "Mulata", interpretiveText: "Grupo minoritario en la serie." },
+    Negra: { label: "Negra", interpretiveText: "Autoidentificación poco frecuente en el total." },
+    "Afroecuatoriana /afrodescendiente": { label: "Afroecuatoriana", interpretiveText: "Categoría minoritaria en la distribución." },
+    Otro: { label: "Otro", interpretiveText: "Categoría residual de autoidentificación." },
+    "Sin Información": { label: "Sin información", interpretiveText: "Registro sin dato de autoidentificación." },
+    "0": { label: "Sin hijos", interpretiveText: "La mayoría de parejas no reporta hijos a cargo." },
+    "1": { label: "1 hijo", interpretiveText: "Casos con un hijo a cargo." },
+    "2": { label: "2 hijos", interpretiveText: "Casos con dos hijos a cargo." },
+    "3": { label: "3 hijos", interpretiveText: "Casos con tres hijos a cargo." },
+    "4": { label: "4 hijos", interpretiveText: "Casos con cuatro hijos a cargo." },
+  },
+} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
 
 type Escala = "lineal" | "log";
 
@@ -146,7 +183,8 @@ function Demografia() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <InsightPanelProvider value={DEMOGRAFIA_INSIGHTS}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
           {selectedProvince ? `Perfil demográfico en ${selectedProvince}` : "Perfil demográfico"}
@@ -299,5 +337,6 @@ function Demografia() {
         </div>
       </ChartCard>
     </motion.div>
+    </InsightPanelProvider>
   );
 }

@@ -7,6 +7,7 @@ import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { EcuadorMap } from "@/components/EcuadorMap";
 import { useFilters } from "@/contexts/FilterContext";
+import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
 
 export const Route = createFileRoute("/geografia")({
   head: () => ({ meta: [{ title: "Geografía · Divorcios Ecuador 2020" }] }),
@@ -29,6 +30,34 @@ const REGION_OPTS: { value: Region; label: string }[] = [
   { value: "amazonia", label: "Amazonía" },
   { value: "insular", label: "Insular" },
 ];
+
+const GEOGRAFIA_INSIGHTS = {
+  priority: ["canton", "province"],
+  overviewText:
+    "Guayas y Pichincha concentran la mayor cantidad de divorcios porque son las provincias más pobladas del país, no porque ahí existan más conflictos matrimoniales por persona. El mismo patrón se repite en cualquier trámite civil.",
+  details: {
+    Guayas: {
+      label: "Guayas",
+      interpretiveText: "Lidera por volumen absoluto y refleja el peso demográfico de la provincia más poblada.",
+    },
+    Pichincha: {
+      label: "Pichincha",
+      interpretiveText: "Segundo gran polo poblacional; su volumen responde principalmente al tamaño de la población.",
+    },
+    Azuay: {
+      label: "Azuay",
+      interpretiveText: "Aquí el trámite judicial pesa más que el notarial, una señal de estructura familiar distinta o de distinto uso de notarías.",
+    },
+    Chimborazo: {
+      label: "Chimborazo",
+      interpretiveText: "Provincia útil para comparar concentración absoluta frente a provincias más grandes.",
+    },
+    Cañar: {
+      label: "Cañar",
+      interpretiveText: "Caso interesante para revisar concentración relativa frente a la población provincial.",
+    },
+  },
+} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
 
 function Geografia() {
   const [region, setRegion] = useState<Region>("todas");
@@ -69,7 +98,8 @@ function Geografia() {
   const top10 = [...filtered].slice(0, Math.min(10, filtered.length));
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <InsightPanelProvider value={GEOGRAFIA_INSIGHTS}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
           {selectedProvince ? `Análisis geográfico: ${selectedProvince}` : "Distribución geográfica"}
@@ -219,5 +249,6 @@ function Geografia() {
         />
       </ChartCard>
     </motion.div>
+    </InsightPanelProvider>
   );
 }

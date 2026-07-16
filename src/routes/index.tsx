@@ -6,6 +6,7 @@ import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters } from "@/contexts/FilterContext";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Resumen · Divorcios Ecuador 2020" }] }),
@@ -13,6 +14,47 @@ export const Route = createFileRoute("/")({
 });
 
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+const INDEX_INSIGHTS = {
+  priority: ["month", "canton", "province"],
+  overviewText:
+    "La serie mensual muestra una caída abrupta entre marzo y mayo por el cierre judicial de la pandemia y un rebote en septiembre por el rezago acumulado. En el mapa y en el ranking, Guayas y Pichincha lideran por tamaño poblacional, no por mayor conflicto por persona.",
+  details: {
+    Marzo: {
+      label: "Marzo",
+      interpretiveText:
+        "La caída empieza aquí: el 16 de marzo se declaró el Estado de Excepción y al día siguiente se suspendieron todas las labores judiciales.",
+    },
+    Abril: {
+      label: "Abril",
+      interpretiveText: "Abril de 2020 queda prácticamente detenido por el cierre judicial nacional durante la pandemia.",
+    },
+    Mayo: {
+      label: "Mayo",
+      interpretiveText: "Mayo sigue en mínimos, con apenas reanudación parcial de trámites hasta la reapertura progresiva.",
+    },
+    Junio: {
+      label: "Junio",
+      interpretiveText: "Junio marca la reactivación progresiva previa a la reapertura total del sistema judicial.",
+    },
+    Septiembre: {
+      label: "Septiembre",
+      interpretiveText: "Septiembre concentra el mayor número de divorcios del año porque absorbe los trámites represados durante el confinamiento.",
+    },
+    Guayas: {
+      label: "Guayas",
+      interpretiveText: "Guayas concentra más casos porque es la provincia más poblada; eso no implica más divorcios por persona.",
+    },
+    Pichincha: {
+      label: "Pichincha",
+      interpretiveText: "Pichincha sigue el mismo patrón de concentración poblacional que Guayas.",
+    },
+    Azuay: {
+      label: "Azuay",
+      interpretiveText: "Azuay destaca por una carga relativamente mayor del trámite judicial frente al notarial.",
+    },
+  },
+} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
 
 function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) {
   return (
@@ -45,7 +87,8 @@ function Resumen() {
   const urbanoPct = filteredData.total > 0 ? ((filteredData.area.Urbana / filteredData.total) * 100).toFixed(1) : "0";
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <InsightPanelProvider value={INDEX_INSIGHTS}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <section>
         <p className="text-xs uppercase tracking-widest text-accent font-semibold">Ecuador · INEC</p>
         <h1 className="text-4xl md:text-5xl font-semibold mt-2 text-foreground">
@@ -172,5 +215,6 @@ function Resumen() {
         </ChartCard>
       </div>
     </motion.div>
+    </InsightPanelProvider>
   );
 }
