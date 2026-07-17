@@ -225,67 +225,94 @@ function Resumen() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Gráfico de meses con contexto pandemia */}
         <div className="space-y-3">
-          {/* Nota del decreto — siempre visible encima del gráfico */}
-          {showPandemiaNote && (
-            <ContextNote title="Impacto del Decreto 1017 (16 marzo 2020):" variant="warning">
-              El Presidente declaró Estado de Excepción por la pandemia. Al día siguiente se suspendieron todas las labores judiciales y notariales.{" "}
-              <span className="font-semibold">Resolución 031-2020</span> del Consejo de la Judicatura suspendió términos procesales.{" "}
-              <span className="font-semibold">Resolución 057-2020</span> extendió las restricciones hasta junio.
-              El resultado: de 2.465 casos en enero, solo <span className="font-semibold text-rose-700">1 caso en abril</span> y{" "}
-              <span className="font-semibold text-rose-700">18 en mayo</span>. El rebote llegó en septiembre con{" "}
-              <span className="font-semibold text-emerald-700">1.723 casos</span>.
-            </ContextNote>
-          )}
-
-          {/* Tarjeta contextual del mes seleccionado — número del dataset + nota editorial */}
-          <AnimatePresence mode="wait">
-            {selectedMonth && (
-              <MonthContextCard
-                key={selectedMonth}
-                month={selectedMonth}
-                count={filteredData.mes[selectedMonth] ?? 0}
-              />
+          {/* Nota del decreto — desaparece suavemente al seleccionar un mes */}
+          <AnimatePresence>
+            {showPandemiaNote && (
+              <motion.div
+                key="pandemia-note"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <ContextNote title="Impacto del Decreto 1017 (16 marzo 2020):" variant="warning">
+                  El Presidente declaró Estado de Excepción por la pandemia. Al día siguiente se suspendieron todas las labores judiciales y notariales.{" "}
+                  <span className="font-semibold">Resolución 031-2020</span> del Consejo de la Judicatura suspendió términos procesales.{" "}
+                  <span className="font-semibold">Resolución 057-2020</span> extendió las restricciones hasta junio.
+                  El resultado: de 2.465 casos en enero, solo <span className="font-semibold text-rose-700">1 caso en abril</span> y{" "}
+                  <span className="font-semibold text-rose-700">18 en mayo</span>. El rebote llegó en septiembre con{" "}
+                  <span className="font-semibold text-emerald-700">1.723 casos</span>.
+                </ContextNote>
+              </motion.div>
             )}
           </AnimatePresence>
 
           <ChartCard 
             title="Ritmo mensual de inscripciones" 
             description={selectedMonth ? `${selectedMonth} seleccionado · Clic para deseleccionar` : "Clic en un mes para ver su dato y contexto."}
+            height={selectedMonth ? 420 : 340}
           >
-            <Bar
-              data={{
-                labels: MESES,
-                datasets: [{
-                  label: "Divorcios inscritos",
-                  data: mesData,
-                  backgroundColor: MESES.map((m) => {
-                    if (selectedMonth) {
-                      return m === selectedMonth ? palette[0] : palette[0] + "44";
-                    }
-                    // Colorear meses pandemia en rojo, septiembre en verde
-                    if (PANDEMIA_MESES.has(m)) return "#e05050";
-                    if (m === "Septiembre") return "#3faa82";
-                    return palette[0];
-                  }),
-                  borderRadius: 6,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                onClick: (_event, elements) => {
-                  if (elements.length > 0) {
-                    const idx = elements[0].index;
-                    const clickedMonth = MESES[idx];
-                    setSelectedMonth(selectedMonth === clickedMonth ? null : clickedMonth);
-                  }
-                },
-                scales: {
-                  x: { ticks: { font: { size: 11 } } },
-                },
-              }}
-            />
+            <div className="flex flex-col h-full">
+              <div className="shrink-0">
+                <AnimatePresence>
+                  {selectedMonth && (
+                    <motion.div
+                      key="month-context"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pb-3">
+                        <MonthContextCard
+                          key={selectedMonth}
+                          month={selectedMonth}
+                          count={filteredData.mes[selectedMonth] ?? 0}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="flex-1 min-h-[180px]">
+                <Bar
+                  data={{
+                    labels: MESES,
+                    datasets: [{
+                      label: "Divorcios inscritos",
+                      data: mesData,
+                      backgroundColor: MESES.map((m) => {
+                        if (selectedMonth) {
+                          return m === selectedMonth ? palette[0] : palette[0] + "44";
+                        }
+                        // Colorear meses pandemia en rojo, septiembre en verde
+                        if (PANDEMIA_MESES.has(m)) return "#e05050";
+                        if (m === "Septiembre") return "#3faa82";
+                        return palette[0];
+                      }),
+                      borderRadius: 6,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    onClick: (_event, elements) => {
+                      if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const clickedMonth = MESES[idx];
+                        setSelectedMonth(selectedMonth === clickedMonth ? null : clickedMonth);
+                      }
+                    },
+                    scales: {
+                      x: { ticks: { font: { size: 11 } } },
+                    },
+                  }}
+                />
+              </div>
+            </div>
           </ChartCard>
 
           {/* Leyenda de colores del gráfico */}

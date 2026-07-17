@@ -311,86 +311,128 @@ function Causas() {
         </label>
       </div>
 
-      {/* Tarjeta contextual de la causa seleccionada */}
-      <AnimatePresence mode="wait">
-        {selectedCause && (
-          <CausaContextCard
-            key={selectedCause}
-            causa={selectedCause}
-            count={filteredData.causa[selectedCause] ?? 0}
-            total={filteredData.total}
-          />
-        )}
-      </AnimatePresence>
-
       <div className="grid gap-6 lg:grid-cols-2">
-        <ChartCard title="Motivos legales del divorcio" description="Clic en una barra para ver su definición legal." height={440}>
-          <Bar
-            key="causas"
-            data={{
-              labels: causas.map(([k]) => CAUSA_CORTA[k] ?? k),
-              datasets: [
-                {
-                  label: "Casos",
-                  data: causas.map(([, v]) => v),
-                  backgroundColor: causas.map(([k]) => 
-                    selectedCause 
-                      ? k === selectedCause ? palette[4] : palette[4] + "44"
-                      : palette[4]
-                  ),
-                  borderRadius: 6,
-                },
-              ],
-            }}
-            options={{
-              indexAxis: "y",
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              onClick: (_event, elements) => {
-                if (elements.length > 0) {
-                  const idx = elements[0].index;
-                  const clickedCause = causas[idx][0];
-                  setSelectedCause(selectedCause === clickedCause ? null : clickedCause);
-                }
-              },
-            }}
-          />
+        <ChartCard title="Motivos legales del divorcio" description="Clic en una barra para ver su definición legal." height={selectedCause ? 520 : 440}>
+          <div className="flex flex-col h-full">
+            <div className="shrink-0">
+              <AnimatePresence>
+                {selectedCause && (
+                  <motion.div
+                    key="causa-context-bar"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pb-3">
+                      <CausaContextCard
+                        key={selectedCause + "-bar"}
+                        causa={selectedCause}
+                        count={filteredData.causa[selectedCause] ?? 0}
+                        total={filteredData.total}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="flex-1 min-h-[200px]">
+              <Bar
+                key="causas"
+                data={{
+                  labels: causas.map(([k]) => CAUSA_CORTA[k] ?? k),
+                  datasets: [
+                    {
+                      label: "Casos",
+                      data: causas.map(([, v]) => v),
+                      backgroundColor: causas.map(([k]) => 
+                        selectedCause 
+                          ? k === selectedCause ? palette[4] : palette[4] + "44"
+                          : palette[4]
+                      ),
+                      borderRadius: 6,
+                    },
+                  ],
+                }}
+                options={{
+                  indexAxis: "y",
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  onClick: (_event, elements) => {
+                    if (elements.length > 0) {
+                      const idx = elements[0].index;
+                      const clickedCause = causas[idx][0];
+                      setSelectedCause(selectedCause === clickedCause ? null : clickedCause);
+                    }
+                  },
+                }}
+              />
+            </div>
+          </div>
         </ChartCard>
 
-        <ChartCard title={`Peso de las ${topN} causas principales`} description="Concentración de motivos en los principales grupos." height={440}>
-          <Pie
-            key={`pie-${topN}`}
-            data={{
-              labels: [...top.map(([k]) => CAUSA_CORTA[k] ?? k), "Otras causas"],
-              datasets: [
-                {
-                  data: [...top.map(([, v]) => v), otros],
-                  backgroundColor: palette.slice(0, top.length + 1).map((col, i) => {
-                    if (!selectedCause) return col;
-                    const isOtras = i === top.length;
-                    if (isOtras) return col + "44";
-                    const causeKey = top[i][0];
-                    return causeKey === selectedCause ? col : col + "44";
-                  }),
-                  borderWidth: 0,
-                },
-              ],
-            }}
-            options={{ 
-              responsive: true, 
-              maintainAspectRatio: false,
-              onClick: (_event, elements) => {
-                if (elements.length > 0) {
-                  const idx = elements[0].index;
-                  if (idx < top.length) {
-                    const clickedCause = top[idx][0];
-                    setSelectedCause(selectedCause === clickedCause ? null : clickedCause);
-                  }
-                }
-              },
-            }}
-          />
+        <ChartCard title={`Peso de las ${topN} causas principales`} description="Concentración de motivos en los principales grupos." height={selectedCause ? 520 : 440}>
+          <div className="flex flex-col h-full">
+            <div className="shrink-0">
+              <AnimatePresence>
+                {selectedCause && (
+                  <motion.div
+                    key="causa-context-pie"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pb-3">
+                      <CausaContextCard
+                        key={selectedCause + "-pie"}
+                        causa={selectedCause}
+                        count={filteredData.causa[selectedCause] ?? 0}
+                        total={filteredData.total}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="flex-1 min-h-[200px]">
+              <Pie
+                key={`pie-${topN}`}
+                data={{
+                  labels: [...top.map(([k]) => CAUSA_CORTA[k] ?? k), "Otras causas"],
+                  datasets: [
+                    {
+                      data: [...top.map(([, v]) => v), otros],
+                      backgroundColor: palette.slice(0, top.length + 1).map((col, i) => {
+                        if (!selectedCause) return col;
+                        const isOtras = i === top.length;
+                        if (isOtras) return col + "44";
+                        const causeKey = top[i][0];
+                        return causeKey === selectedCause ? col : col + "44";
+                      }),
+                      borderWidth: 0,
+                    },
+                  ],
+                }}
+                options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false,
+                  onClick: (_event, elements) => {
+                    if (elements.length > 0) {
+                      const idx = elements[0].index;
+                      if (idx < top.length) {
+                        const clickedCause = top[idx][0];
+                        setSelectedCause(selectedCause === clickedCause ? null : clickedCause);
+                      }
+                    }
+                  },
+                }}
+              />
+            </div>
+          </div>
         </ChartCard>
       </div>
 
