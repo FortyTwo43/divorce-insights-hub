@@ -523,16 +523,25 @@ function Demografia() {
           >
             <div className="flex flex-col h-full">
               <div className="shrink-0">
-                <AnimatePresence mode="wait">
+                <AnimatePresence>
                   {selectedAge && (
-                    <div className="pb-3">
-                      <EdadContextCard
-                        key={selectedAge}
-                        edad={selectedAge}
-                        countH={filteredData.edad_h[selectedAge] ?? 0}
-                        countM={filteredData.edad_m[selectedAge] ?? 0}
-                      />
-                    </div>
+                    <motion.div
+                      key="edad-context"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pb-3">
+                        <EdadContextCard
+                          key={selectedAge}
+                          edad={selectedAge}
+                          countH={filteredData.edad_h[selectedAge] ?? 0}
+                          countM={filteredData.edad_m[selectedAge] ?? 0}
+                        />
+                      </div>
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -588,16 +597,25 @@ function Demografia() {
             >
               <div className="flex flex-col h-full">
                 <div className="shrink-0">
-                  <AnimatePresence mode="wait">
+                  <AnimatePresence>
                     {selectedEthnicity && (
-                      <div className="pb-3">
-                        <EtniaContextCard
-                          key={selectedEthnicity}
-                          etnia={selectedEthnicity}
-                          count={filteredData.etnia[selectedEthnicity] ?? 0}
-                          total={filteredData.total}
-                        />
-                      </div>
+                      <motion.div
+                        key="etnia-context"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pb-3">
+                          <EtniaContextCard
+                            key={selectedEthnicity}
+                            etnia={selectedEthnicity}
+                            count={filteredData.etnia[selectedEthnicity] ?? 0}
+                            total={filteredData.total}
+                          />
+                        </div>
+                      </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -661,11 +679,20 @@ function Demografia() {
         >
           <div className="flex flex-col h-full">
             <div className="shrink-0">
-              <AnimatePresence mode="wait">
+              <AnimatePresence>
                 {selectedChildren && (
-                  <div className="pb-3">
-                    <HijosContextCard key={selectedChildren}>{selectedChildren}</HijosContextCard>
-                  </div>
+                  <motion.div
+                    key="hijos-context"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pb-3">
+                      <HijosContextCard key={selectedChildren}>{selectedChildren}</HijosContextCard>
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
               <div className="flex flex-wrap gap-3 mb-4 mt-1">
