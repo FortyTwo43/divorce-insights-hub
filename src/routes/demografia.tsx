@@ -447,29 +447,57 @@ function Demografia() {
       </header>
 
       {/* Tarjetas de resumen demográfico — siempre visibles */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <HeroBadge
-          value={`${urbanaPct}%`}
-          label="en zona urbana"
-          sublabel={`${urbanaCount.toLocaleString("es-EC")} casos en ciudades`}
-          color="primary"
-        />
-        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-          <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
-          <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">35–44</div>
-          <div className="w-full text-center text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
-        </div>
-        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-          <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
-          <div className="w-full text-center mt-1 text-lg font-bold text-foreground leading-tight">Bachillerato</div>
-          <div className="w-full text-center text-xs text-muted-foreground mt-0.5">Educación media</div>
-        </div>
-        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-          <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
-          <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">Mestiza</div>
-          <div className="w-full text-center text-xs text-muted-foreground mt-0.5">~71,9% del total</div>
-        </div>
-      </div>
+      {(() => {
+        // Calcular rango de edad pico (sumando hombres + mujeres)
+        const edadCombinada = EDAD_ORDER.map(k => ({
+          k,
+          v: (filteredData.edad_h[k] ?? 0) + (filteredData.edad_m[k] ?? 0),
+        }));
+        const edadPico = edadCombinada.reduce((best, cur) => cur.v > best.v ? cur : best, edadCombinada[0]);
+        const edadPicoLabel = EDAD_LABEL[edadPico.k] ?? edadPico.k;
+
+        // Calcular nivel educativo modal (sumando hombres + mujeres)
+        const nivelCombinado = NIVEL_ORDER.map(k => ({
+          k,
+          v: (filteredData.nivel_h[k] ?? 0) + (filteredData.nivel_m[k] ?? 0),
+        }));
+        const nivelModal = nivelCombinado.reduce((best, cur) => cur.v > best.v ? cur : best, nivelCombinado[0]);
+        const nivelModalLabel = nivelModal.k;
+
+        // Calcular etnia más frecuente
+        const etniaEntries = Object.entries(filteredData.etnia).filter(([k]) => k !== "Sin Información");
+        const topEtnia = etniaEntries.reduce((best, cur) => cur[1] > best[1] ? cur : best, etniaEntries[0]);
+        const topEtniaLabel = topEtnia ? topEtnia[0] : "—";
+        const topEtniaPct = filteredData.total > 0 && topEtnia
+          ? ((topEtnia[1] / filteredData.total) * 100).toFixed(1)
+          : "0";
+
+        return (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <HeroBadge
+              value={`${urbanaPct}%`}
+              label="en zona urbana"
+              sublabel={`${urbanaCount.toLocaleString("es-EC")} casos en ciudades`}
+              color="primary"
+            />
+            <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
+              <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
+              <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">{edadPicoLabel}</div>
+              <div className="w-full text-center text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
+              <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
+              <div className="w-full text-center mt-1 text-base font-bold text-foreground leading-tight">{nivelModalLabel}</div>
+              <div className="w-full text-center text-xs text-muted-foreground mt-0.5">{nivelCombinado.find(n => n.k === nivelModal.k)?.v.toLocaleString("es-EC")} casos</div>
+            </div>
+            <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
+              <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
+              <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">{topEtniaLabel}</div>
+              <div className="w-full text-center text-xs text-muted-foreground mt-0.5">{topEtniaPct}% del total</div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Tarjeta de duración — siempre visible */}
       <div className="space-y-2">
