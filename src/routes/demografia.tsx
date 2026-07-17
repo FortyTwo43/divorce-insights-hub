@@ -287,17 +287,17 @@ function DurationContextCard({ filteredData }: { filteredData: NonNullable<Retur
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <div className="rounded-xl border border-border bg-card px-4 py-3.5 text-center">
+      <div className="rounded-xl border border-border bg-card px-4 py-3.5 text-center flex flex-col items-center justify-center">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Matrimonios cortos</div>
         <div className="mt-1 text-2xl font-bold text-foreground">{pctCortos}%</div>
         <div className="text-xs text-muted-foreground mt-0.5">menos de 5 años</div>
       </div>
-      <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5 text-center">
+      <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3.5 text-center flex flex-col items-center justify-center">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Promedio nacional</div>
         <div className="mt-1 text-2xl font-bold text-primary">~15 años</div>
         <div className="text-xs text-muted-foreground mt-0.5">duración antes del divorcio</div>
       </div>
-      <div className="rounded-xl border border-border bg-card px-4 py-3.5 text-center">
+      <div className="rounded-xl border border-border bg-card px-4 py-3.5 text-center flex flex-col items-center justify-center">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Matrimonios largos</div>
         <div className="mt-1 text-2xl font-bold text-foreground">{pctLargos}%</div>
         <div className="text-xs text-muted-foreground mt-0.5">más de 20 años</div>
@@ -446,17 +446,17 @@ function Demografia() {
           sublabel={`${urbanaCount.toLocaleString("es-EC")} casos en ciudades`}
           color="primary"
         />
-        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4">
+        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
           <div className="mt-1 text-2xl font-bold text-foreground">35–44</div>
           <div className="text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
         </div>
-        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4">
+        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
           <div className="mt-1 text-lg font-bold text-foreground leading-tight">Bachillerato</div>
           <div className="text-xs text-muted-foreground mt-0.5">Educación media</div>
         </div>
-        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4">
+        <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
           <div className="mt-1 text-2xl font-bold text-foreground">Mestiza</div>
           <div className="text-xs text-muted-foreground mt-0.5">~71,9% del total</div>

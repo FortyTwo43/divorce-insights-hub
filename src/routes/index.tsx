@@ -157,7 +157,7 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
       initial={{ opacity: 0, y: 10 }} 
       animate={{ opacity: 1, y: 0 }} 
       transition={{ duration: 0.4 }}
-      className="bg-card border border-border rounded-xl p-5"
+      className="bg-card border border-border rounded-xl p-5 text-center flex flex-col items-center justify-center"
     >
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="text-3xl font-semibold text-foreground mt-2">{value}</div>

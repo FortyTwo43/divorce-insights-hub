@@ -41,23 +41,21 @@ export function HeroBadge({
   const c = COLOR_MAP[color];
   return (
     <div
-      className={`flex items-center gap-5 rounded-2xl border ${c.bg} ${c.border} px-6 py-4`}
+      className={`flex flex-col items-center justify-center text-center rounded-2xl border ${c.bg} ${c.border} px-5 py-4`}
     >
+      <div className="text-xs uppercase tracking-wide text-muted-foreground leading-snug">
+        {label}
+      </div>
       <div
-        className={`text-5xl font-bold tabular-nums ${c.value} shrink-0 leading-none`}
+        className={`mt-1 text-3xl font-bold tabular-nums ${c.value} shrink-0 leading-none`}
       >
         {value}
       </div>
-      <div>
-        <div className="text-base font-semibold text-foreground leading-snug">
-          {label}
+      {sublabel && (
+        <div className="mt-1 text-xs text-muted-foreground leading-snug">
+          {sublabel}
         </div>
-        {sublabel && (
-          <div className="mt-1 text-sm text-muted-foreground leading-snug">
-            {sublabel}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
