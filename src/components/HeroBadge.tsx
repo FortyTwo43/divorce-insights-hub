@@ -43,16 +43,16 @@ export function HeroBadge({
     <div
       className={`flex flex-col items-center justify-center text-center rounded-2xl border ${c.bg} ${c.border} px-5 py-4`}
     >
-      <div className="text-xs uppercase tracking-wide text-muted-foreground leading-snug">
+      <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground leading-snug">
         {label}
       </div>
       <div
-        className={`mt-1 text-3xl font-bold tabular-nums ${c.value} shrink-0 leading-none`}
+        className={`w-full text-center mt-1 text-3xl font-bold tabular-nums ${c.value} shrink-0 leading-none`}
       >
         {value}
       </div>
       {sublabel && (
-        <div className="mt-1 text-xs text-muted-foreground leading-snug">
+        <div className="w-full text-center mt-1 text-xs text-muted-foreground leading-snug">
           {sublabel}
         </div>
       )}

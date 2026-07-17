@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Bar, Radar, Doughnut } from "react-chartjs-2";
 import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters, SexFocus } from "@/contexts/FilterContext";
-import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
+import { type InsightPanelConfig, useSetInsightPanelConfig } from "@/contexts/InsightPanelContext";
 import { ContextNote } from "@/components/ContextNote";
 import { HeroBadge } from "@/components/HeroBadge";
 
@@ -118,7 +118,7 @@ const DEMOGRAFIA_INSIGHTS = {
     "3": { label: "3 hijos", interpretiveText: "Casos con tres hijos a cargo." },
     "4": { label: "4 hijos", interpretiveText: "Casos con cuatro hijos a cargo." },
   },
-} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
+} satisfies InsightPanelConfig;
 
 type Escala = "lineal" | "log";
 
@@ -354,6 +354,14 @@ function Demografia() {
   const aggEtnia = useMemo(() => getAggregatesExcluding(["ethnicity"]), [getAggregatesExcluding]);
   const aggHijos = useMemo(() => getAggregatesExcluding(["children"]), [getAggregatesExcluding]);
 
+  const setInsightConfig = useSetInsightPanelConfig();
+  useEffect(() => {
+    if (setInsightConfig) {
+      setInsightConfig(DEMOGRAFIA_INSIGHTS);
+      return () => setInsightConfig(null);
+    }
+  }, [setInsightConfig]);
+
   if (isLoading || !filteredData || !aggAge || !aggEdu || !aggEtnia || !aggHijos) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
   }
@@ -427,7 +435,7 @@ function Demografia() {
   const urbanaPct = filteredData.total > 0 ? ((urbanaCount / filteredData.total) * 100).toFixed(1) : "0";
 
   return (
-    <InsightPanelProvider value={DEMOGRAFIA_INSIGHTS}>
+    <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
@@ -447,19 +455,19 @@ function Demografia() {
           color="primary"
         />
         <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">35–44</div>
-          <div className="text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
+          <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
+          <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">35–44</div>
+          <div className="w-full text-center text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
         </div>
         <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
-          <div className="mt-1 text-lg font-bold text-foreground leading-tight">Bachillerato</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Educación media</div>
+          <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
+          <div className="w-full text-center mt-1 text-lg font-bold text-foreground leading-tight">Bachillerato</div>
+          <div className="w-full text-center text-xs text-muted-foreground mt-0.5">Educación media</div>
         </div>
         <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
-          <div className="mt-1 text-2xl font-bold text-foreground">Mestiza</div>
-          <div className="text-xs text-muted-foreground mt-0.5">~71,9% del total</div>
+          <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
+          <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">Mestiza</div>
+          <div className="w-full text-center text-xs text-muted-foreground mt-0.5">~71,9% del total</div>
         </div>
       </div>
 
@@ -679,6 +687,6 @@ function Demografia() {
         <span className="font-semibold"> cónyuge 1</span> en el registro INEC.
       </ContextNote>
     </motion.div>
-    </InsightPanelProvider>
+    </>
   );
 }

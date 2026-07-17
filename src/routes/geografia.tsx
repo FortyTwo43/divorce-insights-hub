@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Bar, PolarArea } from "react-chartjs-2";
 import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
@@ -7,7 +7,7 @@ import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { EcuadorMap } from "@/components/EcuadorMap";
 import { useFilters } from "@/contexts/FilterContext";
-import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
+import { type InsightPanelConfig, useSetInsightPanelConfig } from "@/contexts/InsightPanelContext";
 import { ContextNote } from "@/components/ContextNote";
 
 export const Route = createFileRoute("/geografia")({
@@ -211,12 +211,20 @@ const GEOGRAFIA_INSIGHTS = {
       interpretiveText: "Tercera provincia costeña; volumen consistente con su peso demográfico.",
     },
   },
-} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
+} satisfies InsightPanelConfig;
 
 function Geografia() {
   const [region, setRegion] = useState<Region>("todas");
   const [orden, setOrden] = useState<"desc" | "asc">("desc");
   const { filteredData, getAggregatesExcluding, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton } = useFilters();
+
+  const setInsightConfig = useSetInsightPanelConfig();
+  useEffect(() => {
+    if (setInsightConfig) {
+      setInsightConfig(GEOGRAFIA_INSIGHTS);
+      return () => setInsightConfig(null);
+    }
+  }, [setInsightConfig]);
 
   const filtered = useMemo(() => {
     if (!filteredData) return [];
@@ -256,7 +264,7 @@ function Geografia() {
   const top10 = [...filtered].slice(0, Math.min(10, filtered.length));
 
   return (
-    <InsightPanelProvider value={GEOGRAFIA_INSIGHTS}>
+    <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
@@ -435,6 +443,6 @@ function Geografia() {
         />
       </ChartCard>
     </motion.div>
-    </InsightPanelProvider>
+    </>
   );
 }

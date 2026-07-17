@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 export type InsightDimension =
   | "month"
@@ -23,18 +23,26 @@ export type InsightPanelConfig = {
   details: Record<string, InsightDetail>;
 };
 
-const InsightPanelContext = createContext<InsightPanelConfig | null>(null);
+type InsightPanelContextType = {
+  config: InsightPanelConfig | null;
+  setConfig: (config: InsightPanelConfig | null) => void;
+};
+
+const InsightPanelContext = createContext<InsightPanelContextType | null>(null);
 
 export function InsightPanelProvider({
   children,
-  value,
 }: {
   children: ReactNode;
-  value: InsightPanelConfig;
 }) {
-  return <InsightPanelContext.Provider value={value}>{children}</InsightPanelContext.Provider>;
+  const [config, setConfig] = useState<InsightPanelConfig | null>(null);
+  return <InsightPanelContext.Provider value={{ config, setConfig }}>{children}</InsightPanelContext.Provider>;
 }
 
 export function useInsightPanelConfig() {
-  return useContext(InsightPanelContext);
+  return useContext(InsightPanelContext)?.config ?? null;
+}
+
+export function useSetInsightPanelConfig() {
+  return useContext(InsightPanelContext)?.setConfig;
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Bar, Doughnut } from "react-chartjs-2";
 import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
@@ -7,7 +7,7 @@ import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters } from "@/contexts/FilterContext";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
-import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
+import { type InsightPanelConfig, useSetInsightPanelConfig } from "@/contexts/InsightPanelContext";
 import { ContextNote } from "@/components/ContextNote";
 
 export const Route = createFileRoute("/")(  {
@@ -72,7 +72,7 @@ const INDEX_INSIGHTS = {
       interpretiveText: "Azuay destaca por una carga relativamente mayor del trámite judicial frente al notarial.",
     },
   },
-} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
+} satisfies InsightPanelConfig;
 
 const PANDEMIA_MESES = new Set(["Marzo", "Abril", "Mayo"]);
 
@@ -159,9 +159,9 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
       transition={{ duration: 0.4 }}
       className="bg-card border border-border rounded-xl p-5 text-center flex flex-col items-center justify-center"
     >
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="text-3xl font-semibold text-foreground mt-2">{value}</div>
-      {sub && <div className="text-xs text-muted-foreground mt-1">{sub}</div>}
+      <div className="w-full text-center text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="w-full text-center text-3xl font-semibold text-foreground mt-2">{value}</div>
+      {sub && <div className="w-full text-center text-xs text-muted-foreground mt-1">{sub}</div>}
     </motion.div>
   );
 }
@@ -173,6 +173,14 @@ function Resumen() {
   const aggGeo = useMemo(() => {
     return selectedProvince ? getAggregatesExcluding(["canton"]) : getAggregatesExcluding(["province"]);
   }, [getAggregatesExcluding, selectedProvince]);
+
+  const setInsightConfig = useSetInsightPanelConfig();
+  useEffect(() => {
+    if (setInsightConfig) {
+      setInsightConfig(INDEX_INSIGHTS);
+      return () => setInsightConfig(null);
+    }
+  }, [setInsightConfig]);
 
   if (isLoading || !filteredData || !aggSinMes || !aggGeo) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
@@ -193,7 +201,7 @@ function Resumen() {
   const showPandemiaNote = !selectedMonth;
 
   return (
-    <InsightPanelProvider value={INDEX_INSIGHTS}>
+    <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <section>
         <p className="text-xs uppercase tracking-widest text-accent font-semibold">Ecuador · INEC</p>
@@ -371,6 +379,6 @@ function Resumen() {
         </ChartCard>
       </div>
     </motion.div>
-    </InsightPanelProvider>
+    </>
   );
 }

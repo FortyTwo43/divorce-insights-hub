@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Bar, Pie, Line } from "react-chartjs-2";
 import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { useFilters } from "@/contexts/FilterContext";
-import { InsightPanelProvider } from "@/contexts/InsightPanelContext";
+import { type InsightPanelConfig, useSetInsightPanelConfig } from "@/contexts/InsightPanelContext";
 import { HeroBadge } from "@/components/HeroBadge";
 import { LegalGlossary } from "@/components/LegalGlossary";
 import { ContextNote } from "@/components/ContextNote";
@@ -147,7 +147,7 @@ const CAUSE_INSIGHTS = {
     "21-30": { label: "21 a 30 años", interpretiveText: "Matrimonios de larga duración al momento del divorcio." },
     "30+": { label: "Más de 30 años", interpretiveText: "Casos de trayectorias matrimoniales muy largas." },
   },
-} satisfies Parameters<typeof InsightPanelProvider>[0]["value"];
+} satisfies InsightPanelConfig;
 
 function CausaContextCard({ causa, count, total }: { causa: string; count: number; total: number }) {
   const row = DUR_PROMEDIO.find((r) => r.clave === causa);
@@ -248,6 +248,14 @@ function Causas() {
   const aggCause = useMemo(() => getAggregatesExcluding(["cause"]), [getAggregatesExcluding]);
   const aggDuration = useMemo(() => getAggregatesExcluding(["duration"]), [getAggregatesExcluding]);
 
+  const setInsightConfig = useSetInsightPanelConfig();
+  useEffect(() => {
+    if (setInsightConfig) {
+      setInsightConfig(CAUSE_INSIGHTS);
+      return () => setInsightConfig(null);
+    }
+  }, [setInsightConfig]);
+
   const causas = useMemo(() => {
     if (!aggCause) return [];
     const entries = Object.entries(aggCause.causa).sort((a, b) => b[1] - a[1]);
@@ -270,7 +278,7 @@ function Causas() {
   const durVals = DUR_ORDER.map((k) => aggDuration?.duracion[k] ?? 0);
 
   return (
-    <InsightPanelProvider value={CAUSE_INSIGHTS}>
+    <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
@@ -454,6 +462,6 @@ function Causas() {
         <DurationTable selectedCause={selectedCause} />
       </div>
     </motion.div>
-    </InsightPanelProvider>
+    </>
   );
 }
