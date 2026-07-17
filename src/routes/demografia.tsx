@@ -174,11 +174,10 @@ function Chips<T extends string>({
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-            value === o.value
+          className={`px-3 py-1 text-xs font-medium rounded transition-colors ${value === o.value
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground"
-          }`}
+            }`}
         >
           {o.label}
         </button>
@@ -339,9 +338,9 @@ function HijosContextCard({ children: count }: { children: string }) {
 function Demografia() {
   const [escala, setEscala] = useState<Escala>("log");
   const [incluirSinHijos, setIncluirSinHijos] = useState(true);
-  
-  const { 
-    filteredData, getAggregatesExcluding, isLoading, selectedProvince, 
+
+  const {
+    filteredData, getAggregatesExcluding, isLoading, selectedProvince,
     selectedSexFocus, setSelectedSexFocus,
     selectedAge, setSelectedAge,
     selectedEdu, setSelectedEdu,
@@ -378,7 +377,7 @@ function Demografia() {
     isSexHombres && {
       label: "Hombres",
       data: edadH,
-      backgroundColor: EDAD_ORDER.map(k => 
+      backgroundColor: EDAD_ORDER.map(k =>
         selectedAge ? (k === selectedAge ? palette[0] : palette[0] + "44") : palette[0]
       ),
       borderRadius: 6,
@@ -386,7 +385,7 @@ function Demografia() {
     isSexMujeres && {
       label: "Mujeres",
       data: edadM,
-      backgroundColor: EDAD_ORDER.map(k => 
+      backgroundColor: EDAD_ORDER.map(k =>
         selectedAge ? (k === selectedAge ? palette[1] : palette[1] + "44") : palette[1]
       ),
       borderRadius: 6,
@@ -399,7 +398,7 @@ function Demografia() {
       data: nivelH,
       borderColor: palette[0],
       backgroundColor: palette[0] + "40",
-      pointBackgroundColor: NIVEL_ORDER.map(k => 
+      pointBackgroundColor: NIVEL_ORDER.map(k =>
         selectedEdu ? (k === selectedEdu ? palette[0] : palette[0] + "44") : palette[0]
       ),
       pointRadius: NIVEL_ORDER.map(k => k === selectedEdu ? 6 : 4),
@@ -409,7 +408,7 @@ function Demografia() {
       data: nivelM,
       borderColor: palette[1],
       backgroundColor: palette[1] + "40",
-      pointBackgroundColor: NIVEL_ORDER.map(k => 
+      pointBackgroundColor: NIVEL_ORDER.map(k =>
         selectedEdu ? (k === selectedEdu ? palette[1] : palette[1] + "44") : palette[1]
       ),
       pointRadius: NIVEL_ORDER.map(k => k === selectedEdu ? 6 : 4),
@@ -437,284 +436,303 @@ function Demografia() {
   return (
     <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-      <header>
-        <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
-          {selectedProvince ? `Perfil demográfico en ${selectedProvince}` : "Perfil demográfico"}
-        </h1>
-        <p className="mt-2 text-muted-foreground max-w-2xl">
-          Edad, educación, autoidentificación étnica y número de hijos de las personas divorciadas.
-        </p>
-      </header>
+        <header>
+          <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
+            {selectedProvince ? `Perfil demográfico en ${selectedProvince}` : "Perfil demográfico"}
+          </h1>
+          <p className="mt-2 text-muted-foreground max-w-2xl">
+            Edad, educación, autoidentificación étnica y número de hijos de las personas divorciadas.
+          </p>
+        </header>
 
-      {/* Tarjetas de resumen demográfico — siempre visibles */}
-      {(() => {
-        // Calcular rango de edad pico (sumando hombres + mujeres)
-        const edadCombinada = EDAD_ORDER.map(k => ({
-          k,
-          v: (filteredData.edad_h[k] ?? 0) + (filteredData.edad_m[k] ?? 0),
-        }));
-        const edadPico = edadCombinada.reduce((best, cur) => cur.v > best.v ? cur : best, edadCombinada[0]);
-        const edadPicoLabel = EDAD_LABEL[edadPico.k] ?? edadPico.k;
+        {/* Tarjetas de resumen demográfico — siempre visibles */}
+        {(() => {
+          // Calcular rango de edad pico (sumando hombres + mujeres)
+          const edadCombinada = EDAD_ORDER.map(k => ({
+            k,
+            v: (filteredData.edad_h[k] ?? 0) + (filteredData.edad_m[k] ?? 0),
+          }));
+          const edadPico = edadCombinada.reduce((best, cur) => cur.v > best.v ? cur : best, edadCombinada[0]);
+          const edadPicoLabel = EDAD_LABEL[edadPico.k] ?? edadPico.k;
 
-        // Calcular nivel educativo modal (sumando hombres + mujeres)
-        const nivelCombinado = NIVEL_ORDER.map(k => ({
-          k,
-          v: (filteredData.nivel_h[k] ?? 0) + (filteredData.nivel_m[k] ?? 0),
-        }));
-        const nivelModal = nivelCombinado.reduce((best, cur) => cur.v > best.v ? cur : best, nivelCombinado[0]);
-        const nivelModalLabel = nivelModal.k;
+          // Calcular nivel educativo modal (sumando hombres + mujeres)
+          const nivelCombinado = NIVEL_ORDER.map(k => ({
+            k,
+            v: (filteredData.nivel_h[k] ?? 0) + (filteredData.nivel_m[k] ?? 0),
+          }));
+          const nivelModal = nivelCombinado.reduce((best, cur) => cur.v > best.v ? cur : best, nivelCombinado[0]);
+          const nivelModalLabel = nivelModal.k;
 
-        // Calcular etnia más frecuente
-        const etniaEntries = Object.entries(filteredData.etnia).filter(([k]) => k !== "Sin Información");
-        const topEtnia = etniaEntries.reduce((best, cur) => cur[1] > best[1] ? cur : best, etniaEntries[0]);
-        const topEtniaLabel = topEtnia ? topEtnia[0] : "—";
-        const topEtniaPct = filteredData.total > 0 && topEtnia
-          ? ((topEtnia[1] / filteredData.total) * 100).toFixed(1)
-          : "0";
+          // Calcular etnia más frecuente
+          const etniaEntries = Object.entries(filteredData.etnia).filter(([k]) => k !== "Sin Información");
+          const topEtnia = etniaEntries.reduce((best, cur) => cur[1] > best[1] ? cur : best, etniaEntries[0]);
+          const topEtniaLabel = topEtnia ? topEtnia[0] : "—";
+          const topEtniaPct = filteredData.total > 0 && topEtnia
+            ? ((topEtnia[1] / filteredData.total) * 100).toFixed(1)
+            : "0";
 
-        return (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <HeroBadge
-              value={`${urbanaPct}%`}
-              label="en zona urbana"
-              sublabel={`${urbanaCount.toLocaleString("es-EC")} casos en ciudades`}
-              color="primary"
-            />
-            <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-              <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
-              <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">{edadPicoLabel}</div>
-              <div className="w-full text-center text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
-            </div>
-            <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-              <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
-              <div className="w-full text-center mt-1 text-base font-bold text-foreground leading-tight">{nivelModalLabel}</div>
-              <div className="w-full text-center text-xs text-muted-foreground mt-0.5">{nivelCombinado.find(n => n.k === nivelModal.k)?.v.toLocaleString("es-EC")} casos</div>
-            </div>
-            <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
-              <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
-              <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">{topEtniaLabel}</div>
-              <div className="w-full text-center text-xs text-muted-foreground mt-0.5">{topEtniaPct}% del total</div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Tarjeta de duración — siempre visible */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-          <span className="text-primary"><IconClock className="w-4 h-4" /></span>
-          Duración del matrimonio antes del divorcio
-        </div>
-        <DurationContextCard filteredData={filteredData} />
-        <ContextNote variant="info">
-          El <span className="font-semibold">promedio nacional es ~15 años</span>. Los matrimonios cortos (menos de 5 años)
-          representan una minoría — la mayoría llega al divorcio tras al menos una década juntos.
-          Los casos de <span className="font-semibold">30+ años</span> son trayectorias muy largas que terminan
-          frecuentemente en etapa de madurez o vejez.
-        </ContextNote>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm text-muted-foreground">Mostrar:</span>
-        <Chips value={selectedSexFocus} onChange={setSelectedSexFocus} options={sexoOpts} />
-      </div>
-
-      {/* Gráfico de edad + tarjeta contextual al seleccionar */}
-      <div className="space-y-3">
-        <AnimatePresence mode="wait">
-          {selectedAge && (
-            <EdadContextCard
-              key={selectedAge}
-              edad={selectedAge}
-              countH={filteredData.edad_h[selectedAge] ?? 0}
-              countM={filteredData.edad_m[selectedAge] ?? 0}
-            />
-          )}
-        </AnimatePresence>
-        <ChartCard
-          title="Edad al momento del divorcio"
-          description="Clic en un rango de edad para ver el detalle interpretativo."
-          height={380}
-        >
-          <Bar
-            data={{ labels: EDAD_ORDER.map((k) => EDAD_LABEL[k]), datasets: edadDatasets }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: { y: { beginAtZero: true } },
-              onClick: (_event, elements) => {
-                if (elements.length > 0) {
-                  const idx = elements[0].index;
-                  const clickedAge = EDAD_ORDER[idx];
-                  setSelectedAge(selectedAge === clickedAge ? null : clickedAge);
-                }
-              },
-            }}
-          />
-        </ChartCard>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ChartCard
-          title="Nivel educativo alcanzado"
-          description="Clic en un punto del radar para filtrar por educación."
-          height={420}
-        >
-          <Radar
-            data={{ labels: NIVEL_ORDER, datasets: nivelDatasets }}
-            options={{ 
-              responsive: true, 
-              maintainAspectRatio: false,
-              onClick: (_event, elements) => {
-                if (elements.length > 0) {
-                  const idx = elements[0].index;
-                  const clickedEdu = NIVEL_ORDER[idx];
-                  setSelectedEdu(selectedEdu === clickedEdu ? null : clickedEdu);
-                }
-              },
-            }}
-          />
-        </ChartCard>
-
-        {/* Etnia + tarjeta contextual */}
-        <div className="space-y-3">
-          <AnimatePresence mode="wait">
-            {selectedEthnicity && (
-              <EtniaContextCard
-                key={selectedEthnicity}
-                etnia={selectedEthnicity}
-                count={filteredData.etnia[selectedEthnicity] ?? 0}
-                total={filteredData.total}
+          return (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <HeroBadge
+                value={`${urbanaPct}%`}
+                label="en zona urbana"
+                sublabel={`${urbanaCount.toLocaleString("es-EC")} casos en ciudades`}
+                color="primary"
               />
-            )}
-          </AnimatePresence>
+              <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
+                <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Rango de edad pico</div>
+                <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">{edadPicoLabel}</div>
+                <div className="w-full text-center text-xs text-muted-foreground mt-0.5">años · tramo más frecuente</div>
+              </div>
+              <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
+                <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Nivel educativo modal</div>
+                <div className="w-full text-center mt-1 text-base font-bold text-foreground leading-tight">{nivelModalLabel}</div>
+                <div className="w-full text-center text-xs text-muted-foreground mt-0.5">{nivelCombinado.find(n => n.k === nivelModal.k)?.v.toLocaleString("es-EC")} casos</div>
+              </div>
+              <div className="rounded-2xl border border-border bg-card/80 px-5 py-4 text-center flex flex-col items-center justify-center">
+                <div className="w-full text-center text-xs uppercase tracking-wide text-muted-foreground">Etnia más frecuente</div>
+                <div className="w-full text-center mt-1 text-2xl font-bold text-foreground">{topEtniaLabel}</div>
+                <div className="w-full text-center text-xs text-muted-foreground mt-0.5">{topEtniaPct}% del total</div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tarjeta de duración — siempre visible */}
+        <div className="space-y-2">
+          <DurationContextCard filteredData={filteredData} />
+          <ContextNote variant="info" collapsible={true} title="Interpretación del patrón nacional">
+            El <span className="font-semibold">promedio nacional es ~15 años</span>. Los matrimonios cortos (menos de 5 años)
+            representan una minoría — la mayoría llega al divorcio tras al menos una década juntos.
+            Los casos de <span className="font-semibold">30+ años</span> son trayectorias muy largas que terminan
+            frecuentemente en etapa de madurez o vejez.
+          </ContextNote>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm text-muted-foreground">Mostrar:</span>
+          <Chips value={selectedSexFocus} onChange={setSelectedSexFocus} options={sexoOpts} />
+        </div>
+
+        {/* Gráfico de edad + tarjeta contextual al seleccionar */}
+        <div className="space-y-3">
           <ChartCard
-            title="Autoidentificación étnica"
-            description="Clic en un segmento para ver su contexto dentro de la serie."
-            height={selectedEthnicity ? 350 : 420}
+            title="Edad al momento del divorcio"
+            description="Clic en un rango de edad para ver el detalle interpretativo."
+            height={460}
           >
-            <Doughnut
-              data={{
-                labels: etnia.map(([k]) => k),
-                datasets: [
-                  {
-                    data: etnia.map(([, v]) => v),
-                    backgroundColor: etnia.map(([k], i) => 
-                      selectedEthnicity 
-                        ? k === selectedEthnicity ? palette[i % palette.length] : palette[i % palette.length] + "44"
-                        : palette[i % palette.length]
-                    ),
-                    borderWidth: 0,
-                  },
-                ],
-              }}
-              options={{ 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                cutout: "55%",
+            <div className="flex flex-col h-full">
+              <div className="shrink-0">
+                <AnimatePresence mode="wait">
+                  {selectedAge && (
+                    <div className="pb-3">
+                      <EdadContextCard
+                        key={selectedAge}
+                        edad={selectedAge}
+                        countH={filteredData.edad_h[selectedAge] ?? 0}
+                        countM={filteredData.edad_m[selectedAge] ?? 0}
+                      />
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="flex-1 min-h-[200px]">
+                <Bar
+                  data={{ labels: EDAD_ORDER.map((k) => EDAD_LABEL[k]), datasets: edadDatasets }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } },
+                    onClick: (_event, elements) => {
+                      if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const clickedAge = EDAD_ORDER[idx];
+                        setSelectedAge(selectedAge === clickedAge ? null : clickedAge);
+                      }
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          </ChartCard>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ChartCard
+            title="Nivel educativo alcanzado"
+            description="Clic en un punto del radar para filtrar por educación."
+            height={420}
+          >
+            <Radar
+              data={{ labels: NIVEL_ORDER, datasets: nivelDatasets }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
                 onClick: (_event, elements) => {
                   if (elements.length > 0) {
                     const idx = elements[0].index;
-                    const clickedEtnia = etnia[idx][0];
-                    setSelectedEthnicity(selectedEthnicity === clickedEtnia ? null : clickedEtnia);
+                    const clickedEdu = NIVEL_ORDER[idx];
+                    setSelectedEdu(selectedEdu === clickedEdu ? null : clickedEdu);
                   }
                 },
               }}
             />
           </ChartCard>
-        </div>
-      </div>
 
-      {/* Gráfico de zona urbana/rural — orden fijo para que los colores no cambien */}
-      <ChartCard title="Entorno de residencia" description="Distribución entre zonas urbanas y rurales.">
-        <Doughnut
-          key="area-demo-donut"
-          data={{
-            labels: ["Urbana", "Rural"],
-            datasets: [
-              {
-                data: [urbanaCount, ruralCount],
-                backgroundColor: [palette[0], palette[1]],
-                borderWidth: 0,
-              },
-            ],
-          }}
-          options={{ responsive: true, maintainAspectRatio: false, cutout: "60%" }}
-        />
-      </ChartCard>
-
-      <ChartCard
-        title="Hijos en común procreados"
-        description="Número de hijos declarados por las parejas al momento del divorcio."
-      >
-        <AnimatePresence mode="wait">
-          {selectedChildren && (
-            <HijosContextCard key={selectedChildren}>{selectedChildren}</HijosContextCard>
-          )}
-        </AnimatePresence>
-        <div className="flex flex-wrap gap-3 mb-4 mt-3">
-          <Chips
-            value={escala}
-            onChange={setEscala}
-            options={[
-              { value: "lineal", label: "Escala lineal" },
-              { value: "log", label: "Escala logarítmica" },
-            ]}
-          />
-          <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={incluirSinHijos}
-              onChange={(e) => setIncluirSinHijos(e.target.checked)}
-              className="accent-primary"
-            />
-            Incluir parejas sin hijos
-          </label>
+          {/* Etnia + tarjeta contextual */}
+          <div className="space-y-3">
+            <ChartCard
+              title="Autoidentificación étnica"
+              description="Clic en un segmento para ver su contexto dentro de la serie."
+              height={460}
+            >
+              <div className="flex flex-col h-full">
+                <div className="shrink-0">
+                  <AnimatePresence mode="wait">
+                    {selectedEthnicity && (
+                      <div className="pb-3">
+                        <EtniaContextCard
+                          key={selectedEthnicity}
+                          etnia={selectedEthnicity}
+                          count={filteredData.etnia[selectedEthnicity] ?? 0}
+                          total={filteredData.total}
+                        />
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div className="flex-1 min-h-[200px]">
+                  <Doughnut
+                    data={{
+                      labels: etnia.map(([k]) => k),
+                      datasets: [
+                        {
+                          data: etnia.map(([, v]) => v),
+                          backgroundColor: etnia.map(([k], i) =>
+                            selectedEthnicity
+                              ? k === selectedEthnicity ? palette[i % palette.length] : palette[i % palette.length] + "44"
+                              : palette[i % palette.length]
+                          ),
+                          borderWidth: 0,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      cutout: "55%",
+                      onClick: (_event, elements) => {
+                        if (elements.length > 0) {
+                          const idx = elements[0].index;
+                          const clickedEtnia = etnia[idx][0];
+                          setSelectedEthnicity(selectedEthnicity === clickedEtnia ? null : clickedEtnia);
+                        }
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            </ChartCard>
+          </div>
         </div>
-        <div style={{ height: 300 }}>
-          <Bar
-            key={`hijos-${escala}-${incluirSinHijos}`}
+
+        {/* Gráfico de zona urbana/rural — orden fijo para que los colores no cambien */}
+        <ChartCard title="Entorno de residencia" description="Distribución entre zonas urbanas y rurales.">
+          <Doughnut
+            key="area-demo-donut"
             data={{
-              labels: hijosOrdered.map(([k]) => (k === "0" ? "Sin hijos" : `${k} hijo${k === "1" ? "" : "s"}`)),
+              labels: ["Urbana", "Rural"],
               datasets: [
                 {
-                  label: "Parejas",
-                  data: hijosOrdered.map(([, v]) => v),
-                  backgroundColor: hijosOrdered.map(([k]) => 
-                    selectedChildren 
-                      ? k === selectedChildren ? palette[2] : palette[2] + "44"
-                      : palette[2]
-                  ),
-                  borderRadius: 6,
+                  data: [urbanaCount, ruralCount],
+                  backgroundColor: [palette[0], palette[1]],
+                  borderWidth: 0,
                 },
               ],
             }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: escala === "log" ? { y: { type: "logarithmic" } } : { y: { beginAtZero: true } },
-              onClick: (_event, elements) => {
-                if (elements.length > 0) {
-                  const idx = elements[0].index;
-                  const clickedChild = hijosOrdered[idx][0];
-                  setSelectedChildren(selectedChildren === clickedChild ? null : clickedChild);
-                }
-              },
-            }}
+            options={{ responsive: true, maintainAspectRatio: false, cutout: "60%" }}
           />
-        </div>
-      </ChartCard>
+        </ChartCard>
 
-      {/* Nota final de contexto */}
-      <ContextNote variant="info">
-        <span className="font-semibold">Área urbana vs. rural:</span> El{" "}
-        <span className="font-semibold">{urbanaPct}% de los divorcios</span> corresponde a residentes en zona urbana,
-        lo que refleja tanto la concentración poblacional en ciudades como el mayor acceso a trámites notariales y
-        judiciales en entornos urbanos. Los datos de etnia, educación y área corresponden a la declaración de
-        <span className="font-semibold"> cónyuge 1</span> en el registro INEC.
-      </ContextNote>
-    </motion.div>
+        <ChartCard
+          title="Hijos en común procreados"
+          description="Número de hijos declarados por las parejas al momento del divorcio."
+          height={480}
+        >
+          <div className="flex flex-col h-full">
+            <div className="shrink-0">
+              <AnimatePresence mode="wait">
+                {selectedChildren && (
+                  <div className="pb-3">
+                    <HijosContextCard key={selectedChildren}>{selectedChildren}</HijosContextCard>
+                  </div>
+                )}
+              </AnimatePresence>
+              <div className="flex flex-wrap gap-3 mb-4 mt-1">
+                <Chips
+                  value={escala}
+                  onChange={setEscala}
+                  options={[
+                    { value: "lineal", label: "Escala lineal" },
+                    { value: "log", label: "Escala logarítmica" },
+                  ]}
+                />
+                <label className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={incluirSinHijos}
+                    onChange={(e) => setIncluirSinHijos(e.target.checked)}
+                    className="accent-primary"
+                  />
+                  Incluir parejas sin hijos
+                </label>
+              </div>
+            </div>
+            <div className="flex-1 min-h-[200px]">
+              <Bar
+                key={`hijos-${escala}-${incluirSinHijos}`}
+                data={{
+                  labels: hijosOrdered.map(([k]) => (k === "0" ? "Sin hijos" : `${k} hijo${k === "1" ? "" : "s"}`)),
+                  datasets: [
+                    {
+                      label: "Parejas",
+                      data: hijosOrdered.map(([, v]) => v),
+                      backgroundColor: hijosOrdered.map(([k]) =>
+                        selectedChildren
+                          ? k === selectedChildren ? palette[2] : palette[2] + "44"
+                          : palette[2]
+                      ),
+                      borderRadius: 6,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: escala === "log" ? { y: { type: "logarithmic" } } : { y: { beginAtZero: true } },
+                  onClick: (_event, elements) => {
+                    if (elements.length > 0) {
+                      const idx = elements[0].index;
+                      const clickedChild = hijosOrdered[idx][0];
+                      setSelectedChildren(selectedChildren === clickedChild ? null : clickedChild);
+                    }
+                  },
+                }}
+              />
+            </div>
+          </div>
+        </ChartCard>
+
+        {/* Nota final de contexto */}
+        <ContextNote variant="info">
+          <span className="font-semibold">Área urbana vs. rural:</span> El{" "}
+          <span className="font-semibold">{urbanaPct}% de los divorcios</span> corresponde a residentes en zona urbana,
+          lo que refleja tanto la concentración poblacional en ciudades como el mayor acceso a trámites notariales y
+          judiciales en entornos urbanos. Los datos de etnia, educación y área corresponden a la declaración de
+          <span className="font-semibold"> cónyuge 1</span> en el registro INEC.
+        </ContextNote>
+      </motion.div>
     </>
   );
 }

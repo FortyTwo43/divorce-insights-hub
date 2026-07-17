@@ -1,4 +1,5 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ContextNoteProps {
   icon?: string;
@@ -6,6 +7,8 @@ interface ContextNoteProps {
   children: ReactNode;
   variant?: "info" | "warning" | "highlight";
   className?: string;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
 }
 
 const VARIANT_STYLES = {
@@ -56,8 +59,12 @@ export function ContextNote({
   children,
   variant = "info",
   className = "",
+  collapsible = false,
+  defaultOpen = false,
 }: ContextNoteProps) {
   const IconComp = ICON_COMPONENTS[variant];
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
   return (
     <div
       className={`rounded-xl border px-4 py-3.5 text-sm leading-relaxed ${VARIANT_STYLES[variant]} ${className}`}
@@ -66,11 +73,43 @@ export function ContextNote({
         <span className={`shrink-0 mt-0.5 ${ICON_ACCENT[variant]}`}>
           <IconComp className="w-4 h-4" />
         </span>
-        <div>
-          {title && (
-            <span className="font-semibold mr-1.5">{title}</span>
+        <div className="flex-1 min-w-0">
+          {(title || collapsible) && (
+            <div 
+              className={`flex items-center justify-between ${collapsible ? 'cursor-pointer select-none opacity-90 hover:opacity-100 transition-opacity' : ''}`}
+              onClick={() => collapsible && setIsOpen(!isOpen)}
+            >
+              <span className="font-semibold mr-1.5">
+                {title || (collapsible && "Nota contextual")}
+              </span>
+              {collapsible && (
+                <svg
+                  className={`w-4 h-4 shrink-0 transition-transform duration-200 opacity-60 ${isOpen ? "rotate-180" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </div>
           )}
-          {children}
+          <AnimatePresence initial={false}>
+            {(!collapsible || isOpen) && (
+              <motion.div
+                initial={collapsible ? { height: 0, opacity: 0 } : false}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className={title || collapsible ? "pt-1.5" : ""}>
+                  {children}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

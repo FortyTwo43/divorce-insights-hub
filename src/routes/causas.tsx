@@ -242,7 +242,6 @@ function DurationTable({ selectedCause }: { selectedCause: string | null }) {
 
 function Causas() {
   const [topN, setTopN] = useState(5);
-  const [excluirSinInfo, setExcluirSinInfo] = useState(true);
   const { filteredData, getAggregatesExcluding, isLoading, selectedProvince, selectedCause, setSelectedCause, selectedDuration, setSelectedDuration } = useFilters();
 
   const aggCause = useMemo(() => getAggregatesExcluding(["cause"]), [getAggregatesExcluding]);
@@ -259,8 +258,8 @@ function Causas() {
   const causas = useMemo(() => {
     if (!aggCause) return [];
     const entries = Object.entries(aggCause.causa).sort((a, b) => b[1] - a[1]);
-    return excluirSinInfo ? entries.filter(([k]) => k !== "Sin Información") : entries;
-  }, [aggCause, excluirSinInfo]);
+    return entries.filter(([k]) => k !== "Sin Información");
+  }, [aggCause]);
 
   if (isLoading || !filteredData) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
@@ -310,15 +309,6 @@ function Causas() {
           />
           <span className="font-medium text-foreground w-6 text-center">{topN}</span>
         </label>
-        <label className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={excluirSinInfo}
-            onChange={(e) => setExcluirSinInfo(e.target.checked)}
-            className="accent-primary"
-          />
-          Excluir "Sin información"
-        </label>
       </div>
 
       {/* Tarjeta contextual de la causa seleccionada */}
@@ -336,7 +326,7 @@ function Causas() {
       <div className="grid gap-6 lg:grid-cols-2">
         <ChartCard title="Motivos legales del divorcio" description="Clic en una barra para ver su definición legal." height={440}>
           <Bar
-            key={`causas-${excluirSinInfo}`}
+            key="causas"
             data={{
               labels: causas.map(([k]) => CAUSA_CORTA[k] ?? k),
               datasets: [
@@ -370,7 +360,7 @@ function Causas() {
 
         <ChartCard title={`Peso de las ${topN} causas principales`} description="Concentración de motivos en los principales grupos." height={440}>
           <Pie
-            key={`pie-${topN}-${excluirSinInfo}`}
+            key={`pie-${topN}`}
             data={{
               labels: [...top.map(([k]) => CAUSA_CORTA[k] ?? k), "Otras causas"],
               datasets: [

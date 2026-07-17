@@ -319,22 +319,6 @@ function Geografia() {
             </div>
           </>
         )}
-        <span className="text-sm text-muted-foreground ml-2">Orden:</span>
-        <div className="inline-flex rounded-md border border-border bg-secondary/40 p-0.5">
-          {(["desc", "asc"] as const).map((o) => (
-            <button
-              key={o}
-              onClick={() => setOrden(o)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                orden === o
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {o === "desc" ? "Mayor a menor" : "Menor a mayor"}
-            </button>
-          ))}
-        </div>
       </div>
 
       <ChartCard
@@ -351,6 +335,25 @@ function Geografia() {
         Para comparar provincias de distinto tamaño, considera que Guayas tiene ~4,4 millones de habitantes
         y Galápagos apenas ~33.000. Clic en una barra del ranking para seleccionar esa provincia y ver su detalle.
       </ContextNote>
+
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-muted-foreground">Orden del ranking:</span>
+        <div className="inline-flex rounded-md border border-border bg-secondary/40 p-0.5">
+          {(["desc", "asc"] as const).map((o) => (
+            <button
+              key={o}
+              onClick={() => setOrden(o)}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                orden === o
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {o === "desc" ? "Mayor a menor" : "Menor a mayor"}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <ChartCard
         title={selectedProvince ? `Divorcios por cantón (${selectedProvince})` : "Divorcios por provincia"}
