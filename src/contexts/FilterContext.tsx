@@ -26,6 +26,7 @@ export type SexFocus = "hombres" | "mujeres" | "ambos";
 interface FilterContextState {
   data: DivorceRecord[];
   filteredData: AggregatedData | null;
+  getAggregatesExcluding: (excludes: string[]) => AggregatedData | null;
   
   selectedProvince: string | null;
   setSelectedProvince: (v: string | null) => void;
@@ -216,11 +217,92 @@ export function FilterProvider({ children }: { children: ReactNode }) {
     selectedSexFocus,
   ]);
 
+  const getAggregatesExcluding = (excludes: string[]): AggregatedData | null => {
+    if (data.length === 0) return null;
+
+    let list = data;
+    if (!excludes.includes("province") && selectedProvince) {
+      list = list.filter((d) => d.provincia_inscripcion === selectedProvince);
+    }
+    if (!excludes.includes("canton") && selectedCanton) {
+      list = list.filter((d) => d.canton_inscripcion === selectedCanton);
+    }
+    if (!excludes.includes("month") && selectedMonth) {
+      list = list.filter((d) => d.mes_inscripcion === selectedMonth);
+    }
+    if (!excludes.includes("cause") && selectedCause) {
+      list = list.filter((d) => d.causa_divorcio === selectedCause);
+    }
+    if (!excludes.includes("duration") && selectedDuration) {
+      list = list.filter((d) => binDuration(d.duracion_matrimonio_anios) === selectedDuration);
+    }
+    if (!excludes.includes("children") && selectedChildren) {
+      list = list.filter((d) => (d.hijos_a_cargo_conyuge1 || "0") === selectedChildren);
+    }
+
+    if (!excludes.includes("age") && selectedAge) {
+      list = list.filter((d) => {
+        const matchH = binAge(d.edad_conyuge1) === selectedAge;
+        const matchM = binAge(d.edad_conyuge2) === selectedAge;
+        if (selectedSexFocus === "hombres") return matchH;
+        if (selectedSexFocus === "mujeres") return matchM;
+        return matchH || matchM;
+      });
+    }
+    if (!excludes.includes("edu") && selectedEdu) {
+      list = list.filter((d) => {
+        const matchH = d.nivel_instruccion_conyuge1 === selectedEdu;
+        const matchM = d.nivel_instruccion_conyuge2 === selectedEdu;
+        if (selectedSexFocus === "hombres") return matchH;
+        if (selectedSexFocus === "mujeres") return matchM;
+        return matchH || matchM;
+      });
+    }
+    if (!excludes.includes("ethnicity") && selectedEthnicity) {
+      list = list.filter((d) => {
+        const matchH = d.autoidentificacion_etnica_conyuge1 === selectedEthnicity;
+        const matchM = d.autoidentificacion_etnica_conyuge2 === selectedEthnicity;
+        if (selectedSexFocus === "hombres") return matchH;
+        if (selectedSexFocus === "mujeres") return matchM;
+        return matchH || matchM;
+      });
+    }
+
+    const agg: AggregatedData = {
+      total: list.length,
+      provincia: {}, canton: {}, mes: {}, causa: {}, nivel_h: {}, nivel_m: {},
+      etnia: {}, area: {}, duracion: {}, edad_h: {}, edad_m: {}, hijos: {}, capitulaciones: {},
+    };
+
+    const inc = (obj: Record<string, number>, key: string) => {
+      const k = key || "Sin Información";
+      obj[k] = (obj[k] || 0) + 1;
+    };
+
+    for (const row of list) {
+      inc(agg.provincia, row.provincia_inscripcion);
+      inc(agg.canton, row.canton_inscripcion);
+      inc(agg.mes, row.mes_inscripcion);
+      inc(agg.causa, row.causa_divorcio);
+      inc(agg.nivel_h, row.nivel_instruccion_conyuge1);
+      inc(agg.nivel_m, row.nivel_instruccion_conyuge2);
+      inc(agg.etnia, row.autoidentificacion_etnica_conyuge1);
+      inc(agg.area, row.area_residencia_conyuge1);
+      inc(agg.duracion, binDuration(row.duracion_matrimonio_anios));
+      inc(agg.edad_h, binAge(row.edad_conyuge1));
+      inc(agg.edad_m, binAge(row.edad_conyuge2));
+      inc(agg.hijos, row.hijos_a_cargo_conyuge1 || "0");
+      inc(agg.capitulaciones, row.capitulaciones_bienes);
+    }
+    return agg;
+  };
+
   return (
     <FilterContext.Provider
       value={{
         data,
         filteredData,
+        getAggregatesExcluding,
         selectedProvince, setSelectedProvince: handleSetProvince,
         selectedCanton, setSelectedCanton,
         selectedMonth, setSelectedMonth,

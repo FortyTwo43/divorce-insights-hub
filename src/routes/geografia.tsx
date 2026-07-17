@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Bar, PolarArea } from "react-chartjs-2";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import "@/lib/chart-setup";
 import { palette } from "@/lib/chart-setup";
 import { ChartCard } from "@/components/ChartCard";
 import { EcuadorMap } from "@/components/EcuadorMap";
 import { useFilters } from "@/contexts/FilterContext";
+import { type InsightPanelConfig, useSetInsightPanelConfig } from "@/contexts/InsightPanelContext";
+import { ContextNote } from "@/components/ContextNote";
 
 export const Route = createFileRoute("/geografia")({
   head: () => ({ meta: [{ title: "Geografía · Divorcios Ecuador 2020" }] }),
@@ -30,37 +32,230 @@ const REGION_OPTS: { value: Region; label: string }[] = [
   { value: "insular", label: "Insular" },
 ];
 
+// Ficha de detalle por provincia — información contextual específica
+const PROVINCIA_DETALLE: Record<string, {
+  nota: string;
+  causaModal: string;
+  tipoCausa: "notarial" | "judicial" | "otra";
+  datoClave?: string;
+}> = {
+  Guayas: {
+    nota: "La provincia más poblada del país lidera en volumen absoluto por razones demográficas, no por mayor conflicto matrimonial por habitante. El mismo patrón se repite en cualquier trámite civil.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Guayaquil — mayor ciudad del Ecuador",
+  },
+  Pichincha: {
+    nota: "Segundo polo poblacional; su volumen responde principalmente al tamaño de la población urbana de Quito. No hay evidencia de una tasa de divorcio inusualmente alta respecto a su población.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Quito — capital del Ecuador",
+  },
+  Azuay: {
+    nota: "Destaca porque el trámite judicial pesa más que el notarial, a diferencia del patrón nacional. Esto puede reflejar una mayor proporción de parejas con hijos menores o bienes a liquidar, o un distinto uso de las notarías en la región.",
+    causaModal: "Mutuo acuerdo vía judicial (predomina sobre notarial)",
+    tipoCausa: "judicial",
+    datoClave: "Inversión notarial/judicial respecto al patrón nacional",
+  },
+  Chimborazo: {
+    nota: "Provincia útil para comparar la concentración absoluta frente a su tamaño poblacional. Riobamba es la capital y concentra la mayoría de los casos provinciales.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Riobamba — polo regional del centro-sierra",
+  },
+  Manabí: {
+    nota: "Tercera provincia por población; su volumen es consistente con el tamaño demográfico de la Costa ecuatoriana.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Portoviejo",
+  },
+  Cañar: {
+    nota: "Caso interesante para revisar la concentración relativa: tiene una proporción de divorcios notable respecto a su población, parcialmente explicada por el fenómeno migratorio que genera mayor inestabilidad en los vínculos matrimoniales.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Alta emigración histórica — factor de riesgo matrimonial",
+  },
+  Loja: {
+    nota: "Provincia del sur sierra con patrón estándar. Su capital concentra la mayor parte de los registros provinciales.",
+    causaModal: "Mutuo acuerdo vía notarial",
+    tipoCausa: "notarial",
+    datoClave: "Capital: Loja",
+  },
+};
+
+const TIPO_COLOR = {
+  notarial: "text-primary bg-primary/10 border-primary/20",
+  judicial: "text-violet-700 bg-violet-50 border-violet-200",
+  otra: "text-muted-foreground bg-secondary/40 border-border",
+};
+
+/* ─── SVG Icons ─── */
+function IconMapPin({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.966 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.273 1.765 11.842 11.842 0 00.757.433l.018.008.006.003zM10 11.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" clipRule="evenodd" />
+    </svg>
+  );
+}
+function IconPin({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path d="M9.153 2.396A1 1 0 0110 2a1 1 0 01.847.396l3.22 4.558a.75.75 0 01-.07.946L11 10.706v5.794a1 1 0 01-2 0v-5.794L6.003 7.9a.75.75 0 01-.07-.946l3.22-4.558z" />
+    </svg>
+  );
+}
+function IconChart({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor">
+      <path d="M15.5 2A1.5 1.5 0 0014 3.5v13a1.5 1.5 0 003 0v-13A1.5 1.5 0 0015.5 2zM9.5 6A1.5 1.5 0 008 7.5v9a1.5 1.5 0 003 0v-9A1.5 1.5 0 009.5 6zM3.5 10A1.5 1.5 0 002 11.5v5a1.5 1.5 0 003 0v-5A1.5 1.5 0 003.5 10z" />
+    </svg>
+  );
+}
+
+function ProvinceDetailCard({ province, count }: { province: string; count: number }) {
+  const detalle = PROVINCIA_DETALLE[province];
+  if (!detalle) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.25 }}
+        className="rounded-xl border border-border bg-secondary/20 overflow-hidden"
+      >
+        <div className="flex items-start gap-3 px-4 py-3.5">
+          <span className="text-muted-foreground shrink-0 mt-0.5">
+            <IconMapPin className="w-4 h-4" />
+          </span>
+          <p className="text-sm text-muted-foreground">
+            Provincia seleccionada: <span className="font-semibold text-foreground">{province}</span>
+            {count > 0 && <span className="ml-1 font-bold text-foreground">({count.toLocaleString("es-EC")} divorcios)</span>}.
+            Selecciona un cantón en el gráfico inferior para ver el detalle.
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-xl border border-primary/15 bg-primary/5 overflow-hidden"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap px-4 py-3 border-b border-primary/10 bg-primary/8">
+        <div className="flex items-center gap-2">
+          <span className="text-primary shrink-0">
+            <IconMapPin className="w-4 h-4" />
+          </span>
+          <span className="text-sm font-semibold text-foreground">{province}</span>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {count > 0 && (
+            <span className="text-sm font-bold text-foreground tabular-nums">
+              {count.toLocaleString("es-EC")} divorcios
+            </span>
+          )}
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${TIPO_COLOR[detalle.tipoCausa]}`}>
+            {detalle.causaModal}
+          </span>
+        </div>
+      </div>
+      {/* Body — horizontal layout */}
+      <div className="flex gap-0 divide-x divide-primary/10">
+        <div className="flex-1 px-4 py-3">
+          <p className="text-sm text-foreground leading-relaxed">{detalle.nota}</p>
+        </div>
+        {detalle.datoClave && (
+          <div className="w-56 shrink-0 px-4 py-3 flex items-start gap-2 bg-background/60">
+            <span className="text-primary shrink-0 mt-0.5">
+              <IconPin className="w-3.5 h-3.5" />
+            </span>
+            <p className="text-xs text-muted-foreground leading-relaxed">{detalle.datoClave}</p>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+const GEOGRAFIA_INSIGHTS = {
+  priority: ["canton", "province"] as const,
+  overviewText:
+    "Guayas y Pichincha concentran la mayor cantidad de divorcios porque son las provincias más pobladas del país, no porque ahí existan más conflictos matrimoniales por persona. El mismo patrón se repite en cualquier trámite civil.",
+  details: {
+    Guayas: {
+      label: "Guayas",
+      interpretiveText: "Lidera por volumen absoluto y refleja el peso demográfico de la provincia más poblada. Causa modal: mutuo consentimiento notarial.",
+    },
+    Pichincha: {
+      label: "Pichincha",
+      interpretiveText: "Segundo gran polo poblacional; su volumen responde principalmente al tamaño de la población de Quito.",
+    },
+    Azuay: {
+      label: "Azuay",
+      interpretiveText: "El trámite judicial pesa más que el notarial — inversión del patrón nacional. Posible mayor proporción de parejas con hijos menores.",
+    },
+    Chimborazo: {
+      label: "Chimborazo",
+      interpretiveText: "Provincia comparadora útil para entender la concentración relativa frente al tamaño poblacional.",
+    },
+    Cañar: {
+      label: "Cañar",
+      interpretiveText: "Alta emigración histórica como factor de inestabilidad matrimonial — concentración relativa notable.",
+    },
+    Manabí: {
+      label: "Manabí",
+      interpretiveText: "Tercera provincia costeña; volumen consistente con su peso demográfico.",
+    },
+  },
+} satisfies InsightPanelConfig;
+
 function Geografia() {
   const [region, setRegion] = useState<Region>("todas");
   const [orden, setOrden] = useState<"desc" | "asc">("desc");
-  const { filteredData, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton, data: allData } = useFilters();
+  const { filteredData, getAggregatesExcluding, isLoading, selectedProvince, setSelectedProvince, selectedCanton, setSelectedCanton } = useFilters();
+
+  const setInsightConfig = useSetInsightPanelConfig();
+  useEffect(() => {
+    if (setInsightConfig) {
+      setInsightConfig(GEOGRAFIA_INSIGHTS);
+      return () => setInsightConfig(null);
+    }
+  }, [setInsightConfig]);
 
   const filtered = useMemo(() => {
     if (!filteredData) return [];
     let entries: [string, number][] = [];
     
     if (selectedProvince) {
-      // Si hay una provincia seleccionada, mostramos cantones
-      entries = Object.entries(filteredData.canton);
+      // Showing cantons of the selected province. Ignore canton filter.
+      const agg = getAggregatesExcluding(["canton"]);
+      entries = Object.entries(agg?.canton || {});
     } else {
-      // Si no, mostramos provincias y aplicamos filtro de región
-      entries = Object.entries(filteredData.provincia);
+      // Showing provinces. Ignore province filter.
+      const agg = getAggregatesExcluding(["province"]);
+      entries = Object.entries(agg?.provincia || {});
       if (region !== "todas") {
         entries = entries.filter(([k]) => REGIONES[region].includes(k));
       }
     }
     
     return entries.sort((a, b) => (orden === "desc" ? b[1] - a[1] : a[1] - b[1]));
-  }, [filteredData, region, orden, selectedProvince]);
+  }, [filteredData, getAggregatesExcluding, region, orden, selectedProvince]);
 
   const mapData = useMemo(() => {
-    if (!filteredData) return {};
-    if (region === "todas") return filteredData.provincia;
+    // Map always shows provinces. Ignore province and canton filters so other provinces don't go to zero.
+    const agg = getAggregatesExcluding(["province", "canton"]);
+    if (!agg) return {};
+    if (region === "todas") return agg.provincia;
     const allowed = new Set(REGIONES[region]);
     return Object.fromEntries(
-      Object.entries(filteredData.provincia).filter(([k]) => allowed.has(k)),
+      Object.entries(agg.provincia).filter(([k]) => allowed.has(k)),
     ) as Record<string, number>;
-  }, [filteredData, region]);
+  }, [getAggregatesExcluding, region]);
 
   if (isLoading || !filteredData) {
     return <div className="h-96 flex items-center justify-center text-muted-foreground">Cargando datos...</div>;
@@ -69,15 +264,39 @@ function Geografia() {
   const top10 = [...filtered].slice(0, Math.min(10, filtered.length));
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+    <>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
       <header>
         <h1 className="text-3xl md:text-4xl font-semibold text-foreground">
           {selectedProvince ? `Análisis geográfico: ${selectedProvince}` : "Distribución geográfica"}
         </h1>
         <p className="mt-2 text-muted-foreground max-w-2xl">
-          Cómo se reparten los divorcios entre las provincias del Ecuador. Selecciona una provincia en el mapa para filtrar el resto de los gráficos en las otras pestañas.
+          Cómo se reparten los divorcios entre las provincias del Ecuador. Selecciona una provincia en el mapa para filtrar el resto de los gráficos.
         </p>
       </header>
+
+      {/* Nota de concentración — siempre visible, prominente */}
+      {!selectedProvince && (
+        <ContextNote title="Concentración poblacional, no conflicto:" variant="info">
+          <span className="font-semibold">Guayas</span> y <span className="font-semibold">Pichincha</span> lideran
+          en divorcios porque son las dos provincias más habitadas del Ecuador —{" "}
+          no porque sus habitantes se divorcien más que el resto.
+          El mismo patrón ocurre con cualquier trámite civil: matrimonios, nacimientos, defunciones.{" "}
+          <span className="font-semibold">Azuay</span> es la excepción más interesante: ahí el trámite{" "}
+          <span className="font-semibold">judicial supera al notarial</span>, inversión del patrón nacional.
+        </ContextNote>
+      )}
+
+      {/* Ficha de provincia seleccionada — aparece al seleccionar */}
+      <AnimatePresence mode="wait">
+        {selectedProvince && (
+          <ProvinceDetailCard
+            key={selectedProvince}
+            province={selectedProvince}
+            count={filteredData.provincia[selectedProvince] ?? 0}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="flex flex-wrap items-center gap-3">
         {!selectedProvince && (
@@ -100,7 +319,25 @@ function Geografia() {
             </div>
           </>
         )}
-        <span className="text-sm text-muted-foreground ml-2">Orden:</span>
+      </div>
+
+      <ChartCard
+        title="Mapa coroplético del Ecuador"
+        description="Pasa el cursor sobre una provincia para ver el detalle. El color se intensifica con más divorcios registrados."
+        height={620}
+      >
+        <EcuadorMap data={mapData} />
+      </ChartCard>
+
+      {/* Nota bajo el mapa — fija */}
+      <ContextNote variant="highlight">
+        El color del mapa refleja el <span className="font-semibold">volumen absoluto</span>, no la tasa por habitante.
+        Para comparar provincias de distinto tamaño, considera que Guayas tiene ~4,4 millones de habitantes
+        y Galápagos apenas ~33.000. Clic en una barra del ranking para seleccionar esa provincia y ver su detalle.
+      </ContextNote>
+
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-muted-foreground">Orden del ranking:</span>
         <div className="inline-flex rounded-md border border-border bg-secondary/40 p-0.5">
           {(["desc", "asc"] as const).map((o) => (
             <button
@@ -117,14 +354,6 @@ function Geografia() {
           ))}
         </div>
       </div>
-
-      <ChartCard
-        title="Mapa coroplético del Ecuador"
-        description="Pasa el cursor sobre una provincia para ver el detalle. El color se intensifica con más divorcios registrados."
-        height={620}
-      >
-        <EcuadorMap data={mapData} />
-      </ChartCard>
 
       <ChartCard
         title={selectedProvince ? `Divorcios por cantón (${selectedProvince})` : "Divorcios por provincia"}
@@ -146,8 +375,6 @@ function Geografia() {
                       : selectedCanton
                       ? palette[0] + "44"
                       : palette[0]
-                    : selectedProvince === null && k === selectedProvince
-                    ? palette[0]
                     : palette[0]
                 ),
                 borderRadius: 4,
@@ -219,5 +446,6 @@ function Geografia() {
         />
       </ChartCard>
     </motion.div>
+    </>
   );
 }
